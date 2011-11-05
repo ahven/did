@@ -43,7 +43,7 @@ class Job:
 			return 1
 		else:
 			return 0
-		
+
 
 class JobList:
 	def __init__(self):
@@ -81,19 +81,21 @@ class JobListLoader:
 						parts[i] = int(parts[i])
 					while len(parts) < 6:
 						parts.append(0)
-					year,  month,  day,  hour,  minute,  second = parts
-					dt = datetime.datetime(year,  month,  day,  hour,  minute,  second)
+					year, month, day, hour, minute, second = parts
+					dt = datetime.datetime(
+										year, month, day, hour, minute, second)
 					self.joblist.push_job(dt, job)
 				elif not re.match("#|\s*$", line):
-					raise Exception("Invalid line",  line)
+					raise Exception("Invalid line", line)
 		except IOError as err:
-			print "Error opening/reading from file '{0}': {1}".format(err.filename, err.strerror)
+			print "Error opening/reading from file '{0}': {1}".format(
+													err.filename, err.strerror)
 
 
 def main():
 	from optparse import OptionParser
 	parser = OptionParser()
-	parser.add_option("-f",  "--log-file",
+	parser.add_option("-f", "--log-file",
 	                  metavar="FILE",
 					  dest="logfile",
 					  default="didlog",
