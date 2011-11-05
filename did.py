@@ -26,94 +26,94 @@ import re
 import datetime
 
 class Job:
-	def __init__(self, start, end, name, num):
-		self.start = start
-		self.end = end
-		self.name = name
-		self.num = num
-		self.brk = self.get_break_from_name(name)
+    def __init__(self, start, end, name, num):
+        self.start = start
+        self.end = end
+        self.name = name
+        self.num = num
+        self.brk = self.get_break_from_name(name)
 
-	@staticmethod
-	def get_break_from_name(name):
-		if re.match("^##", name):
-			return 3
-		elif re == 'arrive':
-			return 2
-		elif re.match("^.", name) or re.match("\*\*", name):
-			return 1
-		else:
-			return 0
+    @staticmethod
+    def get_break_from_name(name):
+        if re.match("^##", name):
+            return 3
+        elif re == 'arrive':
+            return 2
+        elif re.match("^.", name) or re.match("\*\*", name):
+            return 1
+        else:
+            return 0
 
 
 class JobList:
-	def __init__(self):
-		self.jobs = []
+    def __init__(self):
+        self.jobs = []
 
-	def push_job(self, date, name):
-		self.jobs.append(Job(self.last_end(), date, name, len(self.jobs)))
+    def push_job(self, date, name):
+        self.jobs.append(Job(self.last_end(), date, name, len(self.jobs)))
 
-	def last_end(self):
-		if len(self.jobs) > 0:
-			return self.jobs[-1].end
-		else:
-			return datetime.datetime(datetime.MINYEAR, 1, 1)
+    def last_end(self):
+        if len(self.jobs) > 0:
+            return self.jobs[-1].end
+        else:
+            return datetime.datetime(datetime.MINYEAR, 1, 1)
 
-	def dump(self):
-		for job in self.jobs:
-			print job.end, job.name
+    def dump(self):
+        for job in self.jobs:
+            print job.end, job.name
 
 
 class JobListLoader:
-	def __init__(self, joblist):
-		self.joblist = joblist
+    def __init__(self, joblist):
+        self.joblist = joblist
 
-	def load(self, path):
-		pattern = "(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2})(?::(\d{2}))?: (.+)$"
-		rx = re.compile(pattern)
-		try:
-			f = open(path, "r")
-			for line in f:
-				m = rx.match(line)
-				if m:
-					parts = list(m.groups())
-					job = parts.pop()
-					for i in xrange(len(parts)):
-						parts[i] = int(parts[i])
-					while len(parts) < 6:
-						parts.append(0)
-					year, month, day, hour, minute, second = parts
-					dt = datetime.datetime(
-										year, month, day, hour, minute, second)
-					self.joblist.push_job(dt, job)
-				elif not re.match("#|\s*$", line):
-					raise Exception("Invalid line", line)
-		except IOError as err:
-			print "Error opening/reading from file '{0}': {1}".format(
-													err.filename, err.strerror)
+    def load(self, path):
+        pattern = "(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2})(?::(\d{2}))?: (.+)$"
+        rx = re.compile(pattern)
+        try:
+            f = open(path, "r")
+            for line in f:
+                m = rx.match(line)
+                if m:
+                    parts = list(m.groups())
+                    job = parts.pop()
+                    for i in xrange(len(parts)):
+                        parts[i] = int(parts[i])
+                    while len(parts) < 6:
+                        parts.append(0)
+                    year, month, day, hour, minute, second = parts
+                    dt = datetime.datetime(
+                                        year, month, day, hour, minute, second)
+                    self.joblist.push_job(dt, job)
+                elif not re.match("#|\s*$", line):
+                    raise Exception("Invalid line", line)
+        except IOError as err:
+            print "Error opening/reading from file '{0}': {1}".format(
+                                                    err.filename, err.strerror)
 
 
 def main():
-	from optparse import OptionParser
-	parser = OptionParser()
-	parser.add_option("-f", "--log-file",
-	                  metavar="FILE",
-					  dest="logfile",
-					  default="didlog",
-					  action="store",
-					  help="set did database file")
-	parser.add_option("-x", "--helpx",
-	                  dest="help",
-					  default="0",
-					  action="store_const",
-					  const="1",
-					  help="show this help message")
-	(options, args) = parser.parse_args()
+    from optparse import OptionParser
+    parser = OptionParser()
+    parser.add_option("-f", "--log-file",
+                      metavar="FILE",
+                      dest="logfile",
+                      default="didlog",
+                      action="store",
+                      help="set did database file")
+    parser.add_option("-x", "--helpx",
+                      dest="help",
+                      default="0",
+                      action="store_const",
+                      const="1",
+                      help="show this help message")
+    (options, args) = parser.parse_args()
 
-	joblist = JobList()
-	loader = JobListLoader(joblist)
-	loader.load(options.logfile)
-	joblist.dump()
-	print "Help setting:", options.help
+    joblist = JobList()
+    loader = JobListLoader(joblist)
+    loader.load(options.logfile)
+    joblist.dump()
+    print "Help setting:", options.help
 
 if __name__ == "__main__":
-	main()
+    main()
