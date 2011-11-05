@@ -68,11 +68,12 @@ class JobListLoader:
 		self.joblist = joblist
 
 	def load(self, path):
+		pattern = "(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2})(?::(\d{2}))?: (.+)$"
+		rx = re.compile(pattern)
 		try:
-			f = open(path,  "r")
+			f = open(path, "r")
 			for line in f:
-				m = re.match("(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2})(?::(\d{2}))?:"
-						+ " (.+)$",  line)
+				m = rx.match(line)
 				if m:
 					parts = list(m.groups())
 					job = parts.pop()
