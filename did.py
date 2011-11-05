@@ -3,7 +3,7 @@
 """
 did - write what you just did, making a log
 
-Copyright (C) 2010 Michał Czuczman
+Copyright (C) 2010-2011 Michał Czuczman
 
 This file is part of Did.
 
@@ -25,16 +25,49 @@ import sqlite3
 import re
 import datetime
 
-class SqliteDidBase:
-	def __init__(self, path):
-		self.connection = sqlite3.connect(path)
+class Job:
+	def __init__(self, start, end, name, num):
+		self.start = start
+		self.end = end
+		self.name = name
+		self.num = num
+		self.brk = self.get_break_from_name(name)
 
-class RobBase:
-	def __init__(self,  path):
-		self.events = []
-		self._load(path)
+	@staticmethod
+	def get_break_from_name(name):
+		if re.match("^##", name):
+			return 3
+		elif re == 'arrive':
+			return 2
+		elif re.match("^.", name) or re.match("\*\*", name):
+			return 1
+		else:
+			return 0
 		
-	def _load(self, path):
+
+class JobList:
+	def __init__(self):
+		self.jobs = []
+
+	def push_job(self, date, name):
+		self.jobs.append(Job(self.last_end(), date, name, len(self.jobs)))
+
+	def last_end(self):
+		if len(self.jobs) > 0:
+			return self.jobs[-1].end
+		else:
+			return datetime.datetime(datetime.MINYEAR, 1, 1)
+
+	def dump(self):
+		for job in self.jobs:
+			print job.end, job.name
+
+
+class JobListLoader:
+	def __init__(self, joblist):
+		self.joblist = joblist
+
+	def load(self, path):
 		try:
 			f = open(path,  "r")
 			for line in f:
@@ -49,26 +82,22 @@ class RobBase:
 						parts.append(0)
 					year,  month,  day,  hour,  minute,  second = parts
 					dt = datetime.datetime(year,  month,  day,  hour,  minute,  second)
-					self.events.append((dt, job))
+					self.joblist.push_job(dt, job)
 				elif not re.match("#|\s*$", line):
 					raise Exception("Invalid line",  line)
 		except IOError as err:
 			print "Error opening/reading from file '{0}': {1}".format(err.filename, err.strerror)
-			
-	def dump(self):
-		for e in self.events:
-			print e[0], e[1]
 
 
 def main():
 	from optparse import OptionParser
 	parser = OptionParser()
-	parser.add_option("-c",  "--configfile",
+	parser.add_option("-f",  "--log-file",
 	                  metavar="FILE",
-					  dest="configfile",
-					  default="did.sqlite",
+					  dest="logfile",
+					  default="didlog",
 					  action="store",
-					  help="set did database file (sqlite)")
+					  help="set did database file")
 	parser.add_option("-x", "--helpx",
 	                  dest="help",
 					  default="0",
@@ -77,8 +106,10 @@ def main():
 					  help="show this help message")
 	(options, args) = parser.parse_args()
 
-	db = RobBase(options.configfile)
-	db.dump()
+	joblist = JobList()
+	loader = JobListLoader(joblist)
+	loader.load(options.logfile)
+	joblist.dump()
 	print "Help setting:", options.help
 
 if __name__ == "__main__":
