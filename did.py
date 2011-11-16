@@ -91,10 +91,25 @@ class JobListLoader:
             print "Error opening/reading from file '{0}': {1}".format(
                                                     err.filename, err.strerror)
 
+class JobListWriter:
+    def __init__(self, filename):
+        self.filename = filename
+
+    def append(self, date, name):
+        try:
+            f = open(self.filename, "a")
+            f.write("%d-%02d-%02d %02d:%02d:%02d: %s\n" %
+                    (date.year, date.month, date.day,
+                     date.hour, date.minute, date.second, name))
+        except IOError as err:
+            print "Error opening/writing to file '{0}': {1}".format(
+                                                    err.filename, err.strerror)
+
+
 
 def main():
     from optparse import OptionParser
-    parser = OptionParser()
+    parser = OptionParser(usage="%prog [options] [CURRENT-TASK]")
     parser.add_option("-f", "--log-file",
                       metavar="FILE",
                       dest="logfile",
@@ -106,6 +121,14 @@ def main():
     joblist = JobList()
     loader = JobListLoader(joblist)
     loader.load(options.logfile)
+
+    if 0 < len(args):
+        writer = JobListWriter(options.logfile)
+        now = datetime.datetime.now()
+        name = " ".join(args)
+        writer.append(now, name)
+        joblist.push_job(now, name)
+
     joblist.dump()
 
 if __name__ == "__main__":
