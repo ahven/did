@@ -58,9 +58,29 @@ class JobList:
         else:
             return datetime.datetime(datetime.MINYEAR, 1, 1)
 
-    def dump(self):
-        for job in self.jobs:
-            print job.end, job.name
+    def __iter__(self):
+        return self.jobs.__iter__()
+
+    def __len__(self):
+        return len(self.jobs)
+
+    def __contains__(self, v):
+        return v in self.jobs
+
+    def __getitem__(self, v):
+        return self.jobs[v]
+
+
+class JobReport:
+    def __init__(self, joblist):
+        self.joblist = joblist
+
+    def display(self):
+        for job in self.joblist:
+            date = job.end
+            print "%d-%02d-%02d %02d:%02d:%02d: %s" % (
+                    date.year, date.month, date.day,
+                    date.hour, date.minute, date.second, job.name)
 
 
 class JobListLoader:
@@ -129,7 +149,8 @@ def main():
         writer.append(now, name)
         joblist.push_job(now, name)
 
-    joblist.dump()
+    report = JobReport(joblist)
+    report.display()
 
 if __name__ == "__main__":
     main()
