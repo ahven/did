@@ -101,19 +101,12 @@ def main():
                       default="didlog",
                       action="store",
                       help="set did database file")
-    parser.add_option("-x", "--helpx",
-                      dest="help",
-                      default="0",
-                      action="store_const",
-                      const="1",
-                      help="show this help message")
     (options, args) = parser.parse_args()
 
     joblist = JobList()
     loader = JobListLoader(joblist)
     loader.load(options.logfile)
     joblist.dump()
-    print "Help setting:", options.help
 
 if __name__ == "__main__":
     main()
