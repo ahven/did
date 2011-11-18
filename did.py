@@ -25,24 +25,44 @@ import sqlite3
 import re
 import datetime
 
+class JobType:
+    TASK = 0
+    BREAK = 1
+    ARRIVE = 2
+    CURRENT = 3
+
+    def __init__(self, jobname):
+        self.value = self.value_from_job_name(jobname)
+
+    @classmethod
+    def value_from_job_name(cls, name):
+        if re.match("##", name):
+            return cls.CURRENT
+        elif name == 'arrive':
+            return cls.ARRIVE
+        elif re.match("\\.", name) or re.search("\\*\\*", name):
+            return cls.BREAK
+        else:
+            return cls.TASK
+
+    def letter(self):
+        if self.value == self.TASK:
+            return "T"
+        elif self.value == self.BREAK:
+            return "B"
+        elif self.value == self.ARRIVE:
+            return "A"
+        elif self.value == self.CURRENT:
+            return "C"
+
+
 class Job:
     def __init__(self, start, end, name, num):
         self.start = start
         self.end = end
         self.name = name
         self.num = num
-        self.brk = self.get_break_from_name(name)
-
-    @staticmethod
-    def get_break_from_name(name):
-        if re.match("^##", name):
-            return 3
-        elif re == 'arrive':
-            return 2
-        elif re.match("^.", name) or re.match("\*\*", name):
-            return 1
-        else:
-            return 0
+        self.type = JobType(name)
 
 
 class JobList:
@@ -56,7 +76,7 @@ class JobList:
         if len(self.jobs) > 0:
             return self.jobs[-1].end
         else:
-            return datetime.datetime(datetime.MINYEAR, 1, 1)
+            return datetime.datetime.min
 
     def __iter__(self):
         return self.jobs.__iter__()
@@ -74,13 +94,47 @@ class JobList:
 class JobReport:
     def __init__(self, joblist):
         self.joblist = joblist
+        self.last_day = datetime.datetime.min
 
     def display(self):
         for job in self.joblist:
-            date = job.end
-            print "%d-%02d-%02d %02d:%02d:%02d: %s" % (
-                    date.year, date.month, date.day,
-                    date.hour, date.minute, date.second, job.name)
+            self._print_job(job)
+
+    def _start_day(self, day):
+        if day != self.last_day:
+            print
+            print day
+            self.last_day = day;
+
+    def _print_job(self, job):
+        if job.type.value == JobType.ARRIVE or \
+                job.start == datetime.datetime.min:
+            self._print_job_line(job, False, job.end)
+        else:
+            self._start_day(job.start.date())
+            if job.start.date() == job.end.date():
+                self._print_job_line(job, job.start, job.end)
+            else:
+                self._print_job_line(job, job.start, False)
+                day = job.start.date() + datetime.timedelta(1)
+                while day < job.end.date():
+                    self._start_day(day)
+                    self._print_job_line(job, False, False)
+                    day = day + datetime.timedelta(1)
+                self._start_day(job.end.date())
+                self._print_job_line(job, False, job.end)
+
+    def _print_job_line(self, job, start_time, end_time):
+        print "  " + self.time_as_string(start_time) + " .. " + \
+                self.time_as_string(end_time) + "  " + job.type.letter() + \
+                "  " + job.name
+
+    @staticmethod
+    def time_as_string(time):
+        if time:
+            return "%02d:%02d" % (time.hour, time.minute)
+        else:
+            return "     "
 
 
 class JobListLoader:
