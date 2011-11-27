@@ -109,6 +109,7 @@ class JobReport:
     def _print_job(self, job):
         if job.type.value == JobType.ARRIVE or \
                 job.start == datetime.datetime.min:
+            self._start_day(job.end.date())
             self._print_job_line(job, False, job.end)
         else:
             self._start_day(job.start.date())
