@@ -24,6 +24,9 @@ Fifth Floor, Boston, MA  02110-1301  USA
 import sqlite3
 import re
 import datetime
+import os
+import subprocess
+import sys
 
 class JobType:
     TASK = 0
@@ -191,7 +194,22 @@ def main():
                       default="didlog",
                       action="store",
                       help="set did database file")
+    parser.add_option("-e", "--edit", action="store_true", dest="run_editor",
+                      help="Open the task file in an editor")
     (options, args) = parser.parse_args()
+
+    if options.run_editor:
+        editors = []
+        if os.environ.has_key('VISUAL'):
+            editors.append(os.environ['VISUAL'])
+        if os.environ.has_key('EDITOR'):
+            editors.append(os.environ['EDITOR'])
+        editors.extend(["/usr/bin/vim", "/usr/bin/nano", "/usr/bin/pico",
+                        "/usr/bin/vi", "/usr/bin/mcedit"])
+        for editor in editors:
+            if os.path.exists(editor):
+                subprocess.call([editor, options.logfile])
+                sys.exit()
 
     joblist = JobList()
     loader = JobListLoader(joblist)
