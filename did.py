@@ -131,7 +131,23 @@ class JobReport:
     def _print_job_line(self, job, start_time, end_time):
         print "  " + self.time_as_string(start_time) + " .. " + \
                 self.time_as_string(end_time) + "  " + job.type.letter() + \
-                "  " + job.name
+                "  " + ("%-30s  %s" % (job.name, self._printable_job_time(job)))
+
+    def _printable_job_time(self, job):
+        if job.type.value == JobType.ARRIVE:
+            return ''
+        diff = job.end - job.start
+        hours = diff.seconds / 3600
+        minutes = (diff.seconds / 60) % 60
+        seconds = diff.seconds % 60
+        time = ''
+        if 0 < diff.days:
+            time += "%dd" % diff.days
+        if '' != time or 0 < hours:
+            time += "%dh" % hours
+        time += "%dm" % minutes
+        return time
+
 
     @staticmethod
     def time_as_string(time):
