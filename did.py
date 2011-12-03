@@ -21,6 +21,7 @@ Foobar; if not, write to the Free Software Foundation, Inc., 51 Franklin St,
 Fifth Floor, Boston, MA  02110-1301  USA
 """
 
+import abc
 import sqlite3
 import re
 import datetime
@@ -28,44 +29,71 @@ import os
 import subprocess
 import sys
 
-class JobType:
-    TASK = 0
-    BREAK = 1
-    ARRIVE = 2
-    CURRENT = 3
-
-    def __init__(self, jobname):
-        self.value = self.value_from_job_name(jobname)
-
-    @classmethod
-    def value_from_job_name(cls, name):
-        if re.match("##", name):
-            return cls.CURRENT
-        elif name == 'arrive':
-            return cls.ARRIVE
-        elif re.match("\\.", name) or re.search("\\*\\*", name):
-            return cls.BREAK
-        else:
-            return cls.TASK
-
-    def letter(self):
-        if self.value == self.TASK:
-            return "T"
-        elif self.value == self.BREAK:
-            return "B"
-        elif self.value == self.ARRIVE:
-            return "A"
-        elif self.value == self.CURRENT:
-            return "C"
-
 
 class Job:
+    __metaclass__ = abc.ABCMeta
     def __init__(self, start, end, name, num):
         self.start = start
         self.end = end
         self.name = name
         self.num = num
-        self.type = JobType(name)
+
+    @abc.abstractmethod
+    def letter(self):
+        """Return a letter describing the job type"""
+
+    def printable_time(self):
+        diff = self.end - self.start
+        hours = diff.seconds / 3600
+        minutes = (diff.seconds / 60) % 60
+        seconds = diff.seconds % 60
+        time = ''
+        if 0 < diff.days:
+            time += "%dd" % diff.days
+        if '' != time or 0 < hours:
+            time += "%dh" % hours
+        time += "%dm" % minutes
+        return time
+
+
+class TaskJob(Job):
+    def letter(self):
+        return 'T'
+
+
+class BreakJob(Job):
+    def letter(self):
+        return 'B'
+
+
+class ArriveJob(Job):
+    def letter(self):
+        return 'A'
+
+    def printable_time(self):
+        return ''
+
+
+class CurrentJob(Job):
+    def letter(self):
+        return 'C'
+
+
+class JobFactory:
+    def create(self, start, end, name, num):
+        cls = self.name_to_class(name)
+        job = cls(start, end, name, num)
+        return job
+
+    def name_to_class(self, name):
+        if re.match("##", name):
+            return CurrentJob
+        elif name == 'arrive':
+            return ArriveJob
+        elif re.match("\\.", name) or re.search("\\*\\*", name):
+            return BreakJob
+        else:
+            return TaskJob
 
 
 class JobList:
@@ -73,7 +101,8 @@ class JobList:
         self.jobs = []
 
     def push_job(self, date, name):
-        self.jobs.append(Job(self.last_end(), date, name, len(self.jobs)))
+        job = JobFactory().create(self.last_end(), date, name, len(self.jobs))
+        self.jobs.append(job)
 
     def last_end(self):
         if len(self.jobs) > 0:
@@ -110,8 +139,7 @@ class JobReport:
             self.last_day = day;
 
     def _print_job(self, job):
-        if job.type.value == JobType.ARRIVE or \
-                job.start == datetime.datetime.min:
+        if isinstance(job, ArriveJob) or job.start == datetime.datetime.min:
             self._start_day(job.end.date())
             self._print_job_line(job, False, job.end)
         else:
@@ -130,24 +158,8 @@ class JobReport:
 
     def _print_job_line(self, job, start_time, end_time):
         print "  " + self.time_as_string(start_time) + " .. " + \
-                self.time_as_string(end_time) + "  " + job.type.letter() + \
-                "  " + ("%-30s  %s" % (job.name, self._printable_job_time(job)))
-
-    def _printable_job_time(self, job):
-        if job.type.value == JobType.ARRIVE:
-            return ''
-        diff = job.end - job.start
-        hours = diff.seconds / 3600
-        minutes = (diff.seconds / 60) % 60
-        seconds = diff.seconds % 60
-        time = ''
-        if 0 < diff.days:
-            time += "%dd" % diff.days
-        if '' != time or 0 < hours:
-            time += "%dh" % hours
-        time += "%dm" % minutes
-        return time
-
+                self.time_as_string(end_time) + "  " + job.letter() + \
+                "  " + ("%-30s  %s" % (job.name, job.printable_time()))
 
     @staticmethod
     def time_as_string(time):
