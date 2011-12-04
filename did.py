@@ -33,6 +33,7 @@ import sys
 class Job:
     __metaclass__ = abc.ABCMeta
     def __init__(self, start, end, name, num):
+        assert start <= end
         self.start = start
         self.end = end
         self.name = name
@@ -41,6 +42,30 @@ class Job:
     @abc.abstractmethod
     def letter(self):
         """Return a letter describing the job type"""
+
+    def duration(self, date):
+        """
+        Return a datetime.timedelta specifying how long this job lasted on the
+        given day.
+        Return None if given day is out of range.
+        Return False if duration doesn't make sense.
+        """
+        # I'd prefer datetime.datetime to datetime.date
+        if isinstance(date, datetime.date):
+            date = datetime.datetime(date.year, date.month, date.day)
+        if date.date() < self.start.date():
+            return None
+        elif date.date() == self.start.date():
+            if date.date() == self.end.date():
+                return self.end - self.start
+            else:
+                return date + datetime.timedelta(1) - self.start
+        elif date.date() < self.end.date():
+            return datetime.timedelta(1)
+        elif date.date() == self.end.date():
+            return self.end - date
+        else:
+            return None
 
 
 class TaskJob(Job):
@@ -56,6 +81,9 @@ class BreakJob(Job):
 class ArriveJob(Job):
     def letter(self):
         return 'A'
+
+    def duration(self, date):
+        return False
 
 
 class CurrentJob(Job):
@@ -142,23 +170,20 @@ class JobReport:
 
     def _print_job_line(self, job, start_time, end_time):
         print "  %s .. %s  %s  %-30s  %s" % (
-                                             self.time_as_string(start_time),
-                                             self.time_as_string(end_time),
-                                             job.letter(),
-                                             job.name,
-                                             self._printable_time(start_time,
-                                                                  end_time))
+                self.time_as_string(start_time),
+                self.time_as_string(end_time),
+                job.letter(),
+                job.name,
+                self.duration_to_string(job.duration(self.last_day)))
 
-    def _printable_time(self, start, end):
-        if not start or not end:
+    @staticmethod
+    def duration_to_string(diff):
+        if diff is None or not diff:
             return ''
-        diff = end - start
-        hours = diff.seconds / 3600
+        hours = diff.days * 24 + diff.seconds / 3600
         minutes = (diff.seconds / 60) % 60
         seconds = diff.seconds % 60
         time = ''
-        if 0 < diff.days:
-            time += "%dd" % diff.days
         if '' != time or 0 < hours:
             time += "%dh" % hours
         time += "%dm" % minutes
