@@ -42,19 +42,6 @@ class Job:
     def letter(self):
         """Return a letter describing the job type"""
 
-    def printable_time(self):
-        diff = self.end - self.start
-        hours = diff.seconds / 3600
-        minutes = (diff.seconds / 60) % 60
-        seconds = diff.seconds % 60
-        time = ''
-        if 0 < diff.days:
-            time += "%dd" % diff.days
-        if '' != time or 0 < hours:
-            time += "%dh" % hours
-        time += "%dm" % minutes
-        return time
-
 
 class TaskJob(Job):
     def letter(self):
@@ -69,9 +56,6 @@ class BreakJob(Job):
 class ArriveJob(Job):
     def letter(self):
         return 'A'
-
-    def printable_time(self):
-        return ''
 
 
 class CurrentJob(Job):
@@ -157,9 +141,28 @@ class JobReport:
                 self._print_job_line(job, False, job.end)
 
     def _print_job_line(self, job, start_time, end_time):
-        print "  " + self.time_as_string(start_time) + " .. " + \
-                self.time_as_string(end_time) + "  " + job.letter() + \
-                "  " + ("%-30s  %s" % (job.name, job.printable_time()))
+        print "  %s .. %s  %s  %-30s  %s" % (
+                                             self.time_as_string(start_time),
+                                             self.time_as_string(end_time),
+                                             job.letter(),
+                                             job.name,
+                                             self._printable_time(start_time,
+                                                                  end_time))
+
+    def _printable_time(self, start, end):
+        if not start or not end:
+            return ''
+        diff = end - start
+        hours = diff.seconds / 3600
+        minutes = (diff.seconds / 60) % 60
+        seconds = diff.seconds % 60
+        time = ''
+        if 0 < diff.days:
+            time += "%dd" % diff.days
+        if '' != time or 0 < hours:
+            time += "%dh" % hours
+        time += "%dm" % minutes
+        return time
 
     @staticmethod
     def time_as_string(time):
