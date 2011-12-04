@@ -67,6 +67,12 @@ class Job:
         else:
             return None
 
+    def starts_on(self, date):
+        return self.start.date() == date
+
+    def ends_on(self, date):
+        return self.end.date() == date
+
 
 class TaskJob(Job):
     def letter(self):
@@ -83,6 +89,9 @@ class ArriveJob(Job):
         return 'A'
 
     def duration(self, date):
+        return False
+
+    def starts_on(self, date):
         return False
 
 
@@ -153,22 +162,29 @@ class JobReport:
     def _print_job(self, job):
         if isinstance(job, ArriveJob) or job.start == datetime.datetime.min:
             self._start_day(job.end.date())
-            self._print_job_line(job, False, job.end)
+            self._print_job_line(job)
         else:
             self._start_day(job.start.date())
             if job.start.date() == job.end.date():
-                self._print_job_line(job, job.start, job.end)
+                self._print_job_line(job)
             else:
-                self._print_job_line(job, job.start, False)
+                self._print_job_line(job)
                 day = job.start.date() + datetime.timedelta(1)
                 while day < job.end.date():
                     self._start_day(day)
-                    self._print_job_line(job, False, False)
+                    self._print_job_line(job)
                     day = day + datetime.timedelta(1)
                 self._start_day(job.end.date())
-                self._print_job_line(job, False, job.end)
+                self._print_job_line(job)
 
-    def _print_job_line(self, job, start_time, end_time):
+    def _print_job_line(self, job):
+        start_time = False
+        end_time = False
+        if job.starts_on(self.last_day):
+            start_time = job.start
+        if job.ends_on(self.last_day):
+            end_time = job.end
+
         print "  %s .. %s  %s  %-30s  %s" % (
                 self.time_as_string(start_time),
                 self.time_as_string(end_time),
