@@ -58,6 +58,25 @@ class JobFactoryTest(unittest.TestCase):
         self.name_to_instance("## current", job.CurrentJob)
 
 
+class JobListFirstTest(unittest.TestCase):
+
+    def setUp(self):
+        self.joblist = job.JobList()
+        self.start = datetime.datetime(2011, 1, 1, 8)
+
+    def test_first_task(self):
+        with self.assertRaises(job.FirstJobNotArriveError):
+            self.joblist.push_job(self.start, "task")
+
+    def test_first_break(self):
+        with self.assertRaises(job.FirstJobNotArriveError):
+            self.joblist.push_job(self.start, ".break")
+
+    def test_first_current(self):
+        with self.assertRaises(job.FirstJobNotArriveError):
+            self.joblist.push_job(self.start, "## current")
+
+
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
     unittest.main()

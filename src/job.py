@@ -109,12 +109,27 @@ class JobFactory:
             return TaskJob
 
 
+class JobListError(Exception):
+    """Base class for all exceptions related to JobList"""
+    pass
+
+
+class FirstJobNotArriveError(JobListError):
+    """Raised when trying to append a first job, which is not an "arrive" job.
+    """
+    def __str__(self):
+        return "First job is not an \"arrive\" job"
+
+
 class JobList:
     def __init__(self):
         self.jobs = []
 
     def push_job(self, date, name):
         job = JobFactory().create(self.last_end(), date, name, len(self.jobs))
+        if 0 == len(self.jobs):
+            if not isinstance(job, ArriveJob):
+                raise FirstJobNotArriveError()
         self.jobs.append(job)
 
     def last_end(self):
