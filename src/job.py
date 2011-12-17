@@ -137,7 +137,7 @@ class NonChronologicalOrderError(JobListError):
 class JobList:
     def __init__(self):
         self.jobs = []
-        self._days = []
+        self._days = {}
 
     def push_job(self, date, name):
         if date < self.last_end():
@@ -148,25 +148,36 @@ class JobList:
             if not isinstance(job, ArriveJob):
                 raise FirstJobNotArriveError()
 
-        self.jobs.append(job)
-
         # Count the "days"
         if isinstance(job, ArriveJob):
-            self._append_day(job.end.date())
+            self._append_day(job.end.date(), len(self.jobs))
         else:
             day = job.start.date()
             last = job.end.date()
             while day <= last:
-                self._append_day(day)
+                self._append_day(day, len(self.jobs))
                 day += datetime.timedelta(1)
 
-    def days(self):
-        """Return a list of datetime.date objects, when the jobs occur"""
-        return self._days
+        self.jobs.append(job)
 
-    def _append_day(self, day):
-        if 0 == len(self._days) or self._days[-1] < day:
-            self._days.append(day)
+    def days(self):
+        """Return a list of datetime.date objects, when the jobs occur."""
+        days = self._days.keys()
+        days.sort()
+        return days
+
+    def first_job_for_day(self, day):
+        """Return index of the first job in a given day.
+        Return None if there are no such jobs."""
+        if day in self._days:
+            return self._days[day]
+        else:
+            return None
+
+    def _append_day(self, day, index):
+        if not day in self._days:
+            self._days[day] = index
+
 
     def last_end(self):
         if len(self.jobs) > 0:

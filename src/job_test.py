@@ -118,24 +118,37 @@ class JobListDaysTest(unittest.TestCase):
     def assertDays(self, days):
         self.assertListEqual(self.joblist.days(), days)
 
+    def assertFirst(self, day, index):
+        self.assertEqual(self.joblist.first_job_for_day(day), index)
+
 
     def test_empty(self):
         self.assertDays([])
+        self.assertFirst(datetime.date(2011, 1, 1), None)
 
     def test_arrive(self):
         self.joblist.push_job(datetime.datetime(2011, 1, 1, 8), "arrive")
         self.assertDays([datetime.date(2011, 1, 1)])
+        self.assertFirst(datetime.date(2010, 12, 31), None)
+        self.assertFirst(datetime.date(2011, 1, 1), 0)
+        self.assertFirst(datetime.date(2011, 1, 2), None)
 
     def test_one_day(self):
         self.joblist.push_job(datetime.datetime(2011, 1, 1, 8), "arrive")
         self.joblist.push_job(datetime.datetime(2011, 1, 1, 9), "task")
         self.assertDays([datetime.date(2011, 1, 1)])
+        self.assertFirst(datetime.date(2010, 12, 31), None)
+        self.assertFirst(datetime.date(2011, 1, 1), 0)
+        self.assertFirst(datetime.date(2011, 1, 2), None)
 
     def test_two_days(self):
         self.joblist.push_job(datetime.datetime(2011, 1, 1, 8), "arrive")
         self.joblist.push_job(datetime.datetime(2011, 1, 2, 1), "task")
         self.assertDays([datetime.date(2011, 1, 1),
                            datetime.date(2011, 1, 2)])
+        self.assertFirst(datetime.date(2010, 12, 31), None)
+        self.assertFirst(datetime.date(2011, 1, 1), 0)
+        self.assertFirst(datetime.date(2011, 1, 2), 1)
 
     def test_task_gap(self):
         self.joblist.push_job(datetime.datetime(2011, 1, 1, 8), "arrive")
@@ -143,6 +156,11 @@ class JobListDaysTest(unittest.TestCase):
         self.assertDays([datetime.date(2011, 1, 1),
                            datetime.date(2011, 1, 2),
                            datetime.date(2011, 1, 3)])
+        self.assertFirst(datetime.date(2010, 12, 31), None)
+        self.assertFirst(datetime.date(2011, 1, 1), 0)
+        self.assertFirst(datetime.date(2011, 1, 2), 1)
+        self.assertFirst(datetime.date(2011, 1, 3), 1)
+        self.assertFirst(datetime.date(2011, 1, 4), None)
 
     def test_skipped_days(self):
         self.joblist.push_job(datetime.datetime(2011, 1, 1, 8), "arrive")
@@ -150,6 +168,11 @@ class JobListDaysTest(unittest.TestCase):
         self.joblist.push_job(datetime.datetime(2011, 1, 3, 9), "arrive")
         self.assertDays([datetime.date(2011, 1, 1),
                            datetime.date(2011, 1, 3)])
+        self.assertFirst(datetime.date(2010, 12, 31), None)
+        self.assertFirst(datetime.date(2011, 1, 1), 0)
+        self.assertFirst(datetime.date(2011, 1, 2), None)
+        self.assertFirst(datetime.date(2011, 1, 3), 2)
+        self.assertFirst(datetime.date(2011, 1, 4), None)
 
 
 if __name__ == "__main__":
