@@ -22,7 +22,6 @@ Fifth Floor, Boston, MA  02110-1301  USA
 """
 
 import abc
-import sqlite3
 import re
 import datetime
 import os
