@@ -110,6 +110,48 @@ class JobListOrderTest(unittest.TestCase):
         self.assertEqual(self.joblist.last_end(), self.date2)
 
 
+class JobListDaysTest(unittest.TestCase):
+
+    def setUp(self):
+        self.joblist = job.JobList()
+
+    def assertDays(self, days):
+        self.assertListEqual(self.joblist.days(), days)
+
+
+    def test_empty(self):
+        self.assertDays([])
+
+    def test_arrive(self):
+        self.joblist.push_job(datetime.datetime(2011, 1, 1, 8), "arrive")
+        self.assertDays([datetime.date(2011, 1, 1)])
+
+    def test_one_day(self):
+        self.joblist.push_job(datetime.datetime(2011, 1, 1, 8), "arrive")
+        self.joblist.push_job(datetime.datetime(2011, 1, 1, 9), "task")
+        self.assertDays([datetime.date(2011, 1, 1)])
+
+    def test_two_days(self):
+        self.joblist.push_job(datetime.datetime(2011, 1, 1, 8), "arrive")
+        self.joblist.push_job(datetime.datetime(2011, 1, 2, 1), "task")
+        self.assertDays([datetime.date(2011, 1, 1),
+                           datetime.date(2011, 1, 2)])
+
+    def test_task_gap(self):
+        self.joblist.push_job(datetime.datetime(2011, 1, 1, 8), "arrive")
+        self.joblist.push_job(datetime.datetime(2011, 1, 3, 1), "task")
+        self.assertDays([datetime.date(2011, 1, 1),
+                           datetime.date(2011, 1, 2),
+                           datetime.date(2011, 1, 3)])
+
+    def test_skipped_days(self):
+        self.joblist.push_job(datetime.datetime(2011, 1, 1, 8), "arrive")
+        self.joblist.push_job(datetime.datetime(2011, 1, 1, 9), "task1")
+        self.joblist.push_job(datetime.datetime(2011, 1, 3, 9), "arrive")
+        self.assertDays([datetime.date(2011, 1, 1),
+                           datetime.date(2011, 1, 3)])
+
+
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
     unittest.main()

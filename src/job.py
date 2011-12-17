@@ -137,6 +137,7 @@ class NonChronologicalOrderError(JobListError):
 class JobList:
     def __init__(self):
         self.jobs = []
+        self._days = []
 
     def push_job(self, date, name):
         if date < self.last_end():
@@ -146,7 +147,26 @@ class JobList:
         if 0 == len(self.jobs):
             if not isinstance(job, ArriveJob):
                 raise FirstJobNotArriveError()
+
         self.jobs.append(job)
+
+        # Count the "days"
+        if isinstance(job, ArriveJob):
+            self._append_day(job.end.date())
+        else:
+            day = job.start.date()
+            last = job.end.date()
+            while day <= last:
+                self._append_day(day)
+                day += datetime.timedelta(1)
+
+    def days(self):
+        """Return a list of datetime.date objects, when the jobs occur"""
+        return self._days
+
+    def _append_day(self, day):
+        if 0 == len(self._days) or self._days[-1] < day:
+            self._days.append(day)
 
     def last_end(self):
         if len(self.jobs) > 0:
