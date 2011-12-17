@@ -121,11 +121,27 @@ class FirstJobNotArriveError(JobListError):
         return "First job is not an \"arrive\" job"
 
 
+class NonChronologicalOrderError(JobListError):
+    """Raised when trying to append a job with an earlier time than the job
+    added last.
+
+    Attributes:
+        last_datetime -- The time of the last job on the list.
+        appended_datetime -- The time of the job attempted to be added.
+    """
+    def __init__(self, last, appended):
+        self.last_datetime = last
+        self.appended_datetime = appended
+
+
 class JobList:
     def __init__(self):
         self.jobs = []
 
     def push_job(self, date, name):
+        if date < self.last_end():
+            raise NonChronologicalOrderError(self.last_end(), date)
+
         job = JobFactory().create(self.last_end(), date, name, len(self.jobs))
         if 0 == len(self.jobs):
             if not isinstance(job, ArriveJob):

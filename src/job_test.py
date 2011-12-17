@@ -77,6 +77,39 @@ class JobListFirstTest(unittest.TestCase):
             self.joblist.push_job(self.start, "## current")
 
 
+class JobListOrderTest(unittest.TestCase):
+
+    def setUp(self):
+        self.joblist = job.JobList()
+        self.date1 = datetime.datetime(2011, 1, 1, 8)
+        self.date2 = datetime.datetime(2011, 1, 1, 9)
+
+    def test_ordered(self):
+        self.assertEqual(len(self.joblist), 0)
+        self.assertEqual(self.joblist.last_end(), datetime.datetime.min)
+
+        self.joblist.push_job(self.date1, "arrive")
+        self.assertEqual(len(self.joblist), 1)
+        self.assertEqual(self.joblist.last_end(), self.date1)
+
+        self.joblist.push_job(self.date2, "task")
+        self.assertEqual(len(self.joblist), 2)
+        self.assertEqual(self.joblist.last_end(), self.date2)
+
+    def test_same_date(self):
+        self.joblist.push_job(self.date1, "arrive")
+        self.joblist.push_job(self.date1, "task")
+        self.assertEqual(len(self.joblist), 2)
+        self.assertEqual(self.joblist.last_end(), self.date1)
+
+    def test_invalid_order(self):
+        self.joblist.push_job(self.date2, "arrive")
+        with self.assertRaises(job.NonChronologicalOrderError):
+            self.joblist.push_job(self.date1, "task")
+        self.assertEqual(len(self.joblist), 1)
+        self.assertEqual(self.joblist.last_end(), self.date2)
+
+
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
     unittest.main()
