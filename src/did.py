@@ -225,7 +225,6 @@ class JobReport:
             return ''
         hours = diff.days * 24 + diff.seconds / 3600
         minutes = (diff.seconds / 60) % 60
-        seconds = diff.seconds % 60
         time = ''
         if '' != time or 0 < hours:
             time += "%dh" % hours
