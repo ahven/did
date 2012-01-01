@@ -29,6 +29,11 @@ from job import JobList
 from report import JobReport
 from robfile import JobListLoader, JobListWriter
 
+def get_config_dir():
+    if 'HOME' in os.environ:
+        return os.environ['HOME'] + "/.config/did"
+    return "."
+
 
 def main():
     from optparse import OptionParser
@@ -36,7 +41,7 @@ def main():
     parser.add_option("-f", "--log-file",
                       metavar="FILE",
                       dest="logfile",
-                      default="didlog",
+                      default = get_config_dir() + "/joblog",
                       action="store",
                       help="set the task database file")
     parser.add_option("-e", "--edit", action="store_true", dest="run_editor",
