@@ -3,7 +3,7 @@
 """
 did - write what you just did, making a log
 
-Copyright (C) 2010-2011 Michał Czuczman
+Copyright (C) 2010-2012 Michał Czuczman
 
 This file is part of Did.
 
@@ -38,9 +38,9 @@ def main():
                       dest="logfile",
                       default="didlog",
                       action="store",
-                      help="set did database file")
+                      help="set the task database file")
     parser.add_option("-e", "--edit", action="store_true", dest="run_editor",
-                      help="Open the task file in an editor")
+                      help="open the task database file in an editor")
     (options, args) = parser.parse_args()
 
     if options.run_editor:
