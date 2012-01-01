@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Copyright (C) 2011 Michał Czuczman
+Copyright (C) 2011-2012 Michał Czuczman
 
 This file is part of Did.
 
