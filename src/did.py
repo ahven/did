@@ -22,6 +22,7 @@ Fifth Floor, Boston, MA  02110-1301  USA
 """
 
 import datetime
+import errno
 import os
 import subprocess
 import sys
@@ -33,6 +34,14 @@ def get_config_dir():
     if 'HOME' in os.environ:
         return os.environ['HOME'] + "/.config/did"
     return "."
+
+
+def mkdir_p(path):
+    try:
+        os.makedirs(path)
+    except OSError as exc:
+        if exc.errno != errno.EEXIST:
+            raise
 
 
 def main():
@@ -60,6 +69,14 @@ def main():
             if os.path.exists(editor):
                 subprocess.call([editor, options.logfile])
                 sys.exit()
+
+    # Create a file if it doesn't exist
+    if not os.path.exists(options.logfile):
+        dirpart, unused_filepart = os.path.split(options.logfile)
+        if dirpart != '':
+            mkdir_p(dirpart)
+        file(options.logfile, 'a').close()
+
 
     joblist = JobList()
     loader = JobListLoader(joblist)
