@@ -19,6 +19,7 @@ Fifth Floor, Boston, MA  02110-1301  USA
 """
 
 import datetime
+from colorama import Fore, Style
 from job import ArriveJob, BreakJob, CurrentJob, TaskJob
 
 
@@ -60,6 +61,25 @@ class JobDayStats:
             self.current_time += diff
 
 
+def color_for_job(job):
+    if isinstance(job, TaskJob):
+        return Fore.YELLOW + Style.BRIGHT
+    elif isinstance(job, BreakJob):
+        return Fore.BLACK + Style.BRIGHT
+    elif isinstance(job, CurrentJob):
+        return Fore.CYAN + Style.BRIGHT
+    elif isinstance(job, ArriveJob):
+        return Fore.RED
+    else:
+        return ""
+
+def color_for_duration(job):
+    if isinstance(job, TaskJob):
+        return Fore.MAGENTA + Style.BRIGHT
+    else:
+        return ""
+
+
 class JobReport:
     def __init__(self, joblist):
         self.joblist = joblist
@@ -82,7 +102,7 @@ class JobReport:
 
     def _print_day_header(self, day):
         print
-        print day
+        print Fore.GREEN + str(day) + Style.RESET_ALL
 
     def _print_day_footer(self, day):
         stats = JobDayStats(self.joblist, day)
@@ -109,12 +129,16 @@ class JobReport:
         if isinstance(job, ArriveJob) and end_time == False:
             return
 
-        print "  %s .. %s  %s  %-30s  %s" % (
+        print "  %s .. %s  %s  %s%-30s%s  %s%s%s" % (
                 self.time_as_string(start_time),
                 self.time_as_string(end_time),
                 job.letter(),
+                color_for_job(job),
                 job.name,
-                self.duration_to_string(duration))
+                Style.RESET_ALL,
+                color_for_duration(job),
+                self.duration_to_string(duration),
+                Style.RESET_ALL)
 
     @staticmethod
     def duration_to_string(diff):
