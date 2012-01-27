@@ -69,16 +69,20 @@ class JobReport:
 
     def _print_day_footer(self, day):
         stats = JobDayStats(self.joblist, day)
-        if stats.current_time > datetime.timedelta(0):
+        work_time = stats.get_work_time()
+        break_time = stats.get_break_time()
+        current_time = stats.get_current_time()
+
+        if current_time > datetime.timedelta(0):
             print "  Worked %s (+current=%s)   Slacked %s (+current=%s)" % (
-                self.duration_to_string(stats.work_time),
-                self.duration_to_string(stats.work_time + stats.current_time),
-                self.duration_to_string(stats.break_time),
-                self.duration_to_string(stats.break_time + stats.current_time))
+                self.duration_to_string(work_time),
+                self.duration_to_string(work_time + current_time),
+                self.duration_to_string(break_time),
+                self.duration_to_string(break_time + current_time))
         else:
             print "  Worked %-6s   Slacked %s" % (
-                    self.duration_to_string(stats.work_time),
-                    self.duration_to_string(stats.break_time))
+                    self.duration_to_string(work_time),
+                    self.duration_to_string(break_time))
 
     def _print_job_line(self, job, day):
         start_time = False

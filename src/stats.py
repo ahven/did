@@ -25,10 +25,13 @@ from job import BreakJob, CurrentJob, TaskJob
 class JobDayStats:
     def __init__(self, joblist, day):
         self.joblist = joblist
+        self.set_day(day)
+
+    def set_day(self, day):
         self.day = day
-        self.work_time = datetime.timedelta(0)
-        self.break_time = datetime.timedelta(0)
-        self.current_time = datetime.timedelta(0)
+        self._work_time = datetime.timedelta(0)
+        self._break_time = datetime.timedelta(0)
+        self._current_time = datetime.timedelta(0)
         self._analyze()
 
     def _analyze(self):
@@ -53,9 +56,18 @@ class JobDayStats:
         diff = end - start
 
         if isinstance(job, TaskJob):
-            self.work_time += diff;
+            self._work_time += diff;
         elif isinstance(job, BreakJob):
-            self.break_time += diff
+            self._break_time += diff
         elif isinstance(job, CurrentJob):
-            self.current_time += diff
+            self._current_time += diff
+
+    def get_work_time(self):
+        return self._work_time
+
+    def get_break_time(self):
+        return self._break_time
+
+    def get_current_time(self):
+        return self._current_time
 
