@@ -53,11 +53,17 @@ def main():
     parser.add_option("-f", "--log-file",
                       metavar="FILE",
                       dest="logfile",
-                      default = get_config_dir() + "/joblog",
+                      default=get_config_dir() + "/joblog",
                       action="store",
                       help="set the task database file")
     parser.add_option("-e", "--edit", action="store_true", dest="run_editor",
                       help="open the task database file in an editor")
+    parser.add_option("-l", "--last",
+                      dest="max_days",
+                      type="int",
+                      default=1,
+                      action="store",
+                      help="set the number of last work days in detailed view")
     (options, args) = parser.parse_args()
 
     if options.run_editor:
@@ -95,6 +101,7 @@ def main():
         joblist.push_job(datetime.datetime.now(), "## current")
 
     report = JobReport(joblist)
+    report.set_max_days(options.max_days)
     report.display()
 
 if __name__ == "__main__":
