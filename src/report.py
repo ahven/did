@@ -47,10 +47,23 @@ class JobReport:
     def __init__(self, joblist):
         self.joblist = joblist
         self.current_day = datetime.datetime.min
+        self.max_days = None
+
+    def set_max_days(self, max_days=None):
+        """Set the maximum number of days to be displayed
+
+        Only the last max_days number of days will be displayed.
+        Use None for no limit of the number of days.
+        """
+        self.max_days = max_days
 
     def display(self):
-        for day in self.joblist.days():
-            self._print_day(day)
+        index = 0
+        days = self.joblist.days()
+        for day in days:
+            index += 1
+            if self.max_days is None or index + self.max_days > len(days):
+                self._print_day(day)
 
     def _print_day(self, day):
         self._print_day_header(day)
