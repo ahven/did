@@ -27,7 +27,7 @@ import errno
 import os
 import subprocess
 import sys
-from job import JobList
+from WorkLog import WorkLog
 from report import JobReport
 from robfile import JobListLoader, JobListWriter
 
@@ -87,8 +87,8 @@ def main():
         file(options.logfile, 'a').close()
 
 
-    joblist = JobList()
-    loader = JobListLoader(joblist)
+    worklog = WorkLog()
+    loader = JobListLoader(worklog)
     loader.load(options.logfile)
 
     if 0 < len(args):
@@ -96,11 +96,11 @@ def main():
         now = datetime.datetime.now()
         name = " ".join(args)
         writer.append(now, name)
-        joblist.push_job(now, name)
-    elif joblist.last_end().date() == datetime.date.today():
-        joblist.push_job(datetime.datetime.now(), "## current")
+        worklog.append_log_event(now, name)
+    elif worklog.end().date() == datetime.date.today():
+        worklog.append_assumed_interval(datetime.datetime.now())
 
-    report = JobReport(joblist)
+    report = JobReport(worklog)
     report.set_max_days(options.max_days)
     report.display()
 

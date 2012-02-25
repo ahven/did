@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Copyright (C) 2011 Michał Czuczman
+Copyright (C) 2011-2012 Michał Czuczman
 
 This file is part of Did.
 
@@ -22,8 +22,8 @@ import datetime
 import re
 
 class JobListLoader:
-    def __init__(self, joblist):
-        self.joblist = joblist
+    def __init__(self, worklog):
+        self.worklog = worklog
 
     def load(self, path):
         pattern = "(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2})(?::(\d{2}))?: (.+)$"
@@ -34,7 +34,7 @@ class JobListLoader:
                 m = rx.match(line)
                 if m:
                     parts = list(m.groups())
-                    job = parts.pop()
+                    text = parts.pop()
                     for i in xrange(len(parts)):
                         parts[i] = int(parts[i])
                     while len(parts) < 6:
@@ -42,7 +42,7 @@ class JobListLoader:
                     year, month, day, hour, minute, second = parts
                     dt = datetime.datetime(
                                         year, month, day, hour, minute, second)
-                    self.joblist.push_job(dt, job)
+                    self.worklog.append_log_event(dt, text)
                 elif not re.match("#|\s*$", line):
                     raise Exception("Invalid line", line)
         except IOError as err:

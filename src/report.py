@@ -20,104 +20,89 @@ Fifth Floor, Boston, MA  02110-1301  USA
 
 import datetime
 from colorama import Fore, Style
-from job import ArriveJob, BreakJob, CurrentJob, TaskJob
-from stats import JobDayStats
-
-
-def color_for_job(job):
-    if isinstance(job, TaskJob):
-        return Fore.YELLOW + Style.BRIGHT
-    elif isinstance(job, BreakJob):
-        return Fore.BLACK + Style.BRIGHT
-    elif isinstance(job, CurrentJob):
-        return Fore.CYAN + Style.BRIGHT
-    elif isinstance(job, ArriveJob):
-        return Fore.RED
-    else:
-        return ""
-
-def color_for_duration(job):
-    if isinstance(job, TaskJob):
-        return Fore.MAGENTA + Style.BRIGHT
-    else:
-        return ""
+from WorkSessionStats import WorkSessionStats
 
 
 class JobReport:
-    def __init__(self, joblist):
-        self.joblist = joblist
-        self.current_day = datetime.datetime.min
+    def __init__(self, worklog):
+        self.worklog = worklog
         self.max_days = None
 
     def set_max_days(self, max_days=None):
-        """Set the maximum number of days to be displayed
+        """Set the maximum number of sessions to be displayed
 
-        Only the last max_days number of days will be displayed.
-        Use None for no limit of the number of days.
+        Only the last max_days number of sessions will be displayed.
+        Use None for no limit of the number of sessions.
         """
         self.max_days = max_days
 
     def display(self):
         index = 0
-        days = self.joblist.days()
-        for day in days:
+        sessions = self.worklog.sessions()
+        for session in sessions:
             index += 1
-            if self.max_days is None or index + self.max_days > len(days):
-                self._print_day(day)
+            if self.max_days is None or index + self.max_days > len(sessions):
+                self._print_session(session)
 
-    def _print_day(self, day):
-        self._print_day_header(day)
+    def _print_session(self, session):
+        self._print_day_header(session.start().date())
 
-        i = self.joblist.first_job_for_day(day)
-        if i is not None:
-            while i < len(self.joblist) and self.joblist[i].start.date() <= day:
-                self._print_job_line(self.joblist[i], day)
-                i += 1
+        if len(session.intervals()) == 0:
+            self._print_log_line(
+                    "", self.time_as_string(session.start()),
+                    Fore.RED, "arrive", "", "")
 
-        self._print_day_footer(day)
+        for interval in session.intervals():
+            self._print_interval(interval)
+
+        self._print_day_footer(session)
 
     def _print_day_header(self, day):
         print
         print Fore.GREEN + str(day) + Style.RESET_ALL
 
-    def _print_day_footer(self, day):
-        stats = JobDayStats(self.joblist, day)
-        work_time = stats.get_work_time()
-        break_time = stats.get_break_time()
-        current_time = stats.get_current_time()
+    def _print_day_footer(self, session):
+        stats = WorkSessionStats(session)
+        work_time = stats.time_worked()
+        break_time = stats.time_slacked()
 
-        if current_time > datetime.timedelta(0):
-            print "  Worked %s (+current=%s)   Slacked %s (+current=%s)" % (
-                self.duration_to_string(work_time),
-                self.duration_to_string(work_time + current_time),
-                self.duration_to_string(break_time),
-                self.duration_to_string(break_time + current_time))
-        else:
-            print "  Worked %-6s   Slacked %s" % (
+        print "  Worked %-6s   Slacked %s" % (
                     self.duration_to_string(work_time),
                     self.duration_to_string(break_time))
 
-    def _print_job_line(self, job, day):
-        start_time = False
-        end_time = False
-        if job.starts_on(day):
-            start_time = job.start
-        if job.ends_on(day):
-            end_time = job.end
-        duration = job.duration(day)
+    def _print_interval(self, interval):
+        if interval.is_break():
+            name_color = Fore.BLACK + Style.BRIGHT
+            duration_color = ""
+        elif interval.is_assumed():
+            name_color = Fore.YELLOW
+            duration_color = Fore.MAGENTA
+        else:
+            name_color = Fore.YELLOW + Style.BRIGHT
+            duration_color = Fore.MAGENTA + Style.BRIGHT
 
-        if isinstance(job, ArriveJob) and end_time == False:
-            return
+        name = interval.name()
+        if interval.is_assumed():
+            name += " (assumed)"
 
-        print "  %s .. %s  %s  %s%-30s%s  %s%s%s" % (
-                self.time_as_string(start_time),
-                self.time_as_string(end_time),
-                job.letter(),
-                color_for_job(job),
-                job.name,
+        self._print_log_line(
+                self.time_as_string(interval.start()),
+                self.time_as_string(interval.end()),
+                name_color,
+                name,
+                duration_color,
+                self.duration_to_string(interval.end() - interval.start()))
+
+    def _print_log_line(
+            self, start, end, name_color, name, duration_color, duration):
+        print "  %5s .. %5s  %s%-30s%s  %s%s%s" % (
+                start,
+                end,
+                name_color,
+                name,
                 Style.RESET_ALL,
-                color_for_duration(job),
-                self.duration_to_string(duration),
+                duration_color,
+                duration,
                 Style.RESET_ALL)
 
     @staticmethod
