@@ -37,9 +37,21 @@ class WorkSessionStats(object):
         for interval in self.session_.intervals():
             duration = interval.end() - interval.start()
             if interval.is_break():
-                self.time_slacked_ += duration
+                self.add_break_time(duration)
             else:
-                self.time_worked_ += duration
+                self.add_work_time(duration)
+
+    def add_work_time(self, duration):
+        self.time_worked_ += duration
+
+    def add_break_time(self, duration):
+        self.time_slacked_ += duration
+
+    def add_work_seconds(self, seconds):
+        self.add_work_time(datetime.timedelta(0, seconds))
+
+    def add_break_seconds(self, seconds):
+        self.add_break_time(datetime.timedelta(0, seconds))
 
     def time_worked(self):
         return self.time_worked_

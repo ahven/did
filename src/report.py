@@ -24,8 +24,9 @@ from WorkSessionStats import WorkSessionStats
 
 
 class JobReport:
-    def __init__(self, worklog):
+    def __init__(self, worklog, stats_factory):
         self.worklog = worklog
+        self.stats_factory_ = stats_factory
         self.max_days = None
 
     def set_max_days(self, max_days=None):
@@ -62,7 +63,7 @@ class JobReport:
         print Fore.GREEN + str(day) + Style.RESET_ALL
 
     def _print_day_footer(self, session):
-        stats = WorkSessionStats(session)
+        stats = self.stats_factory_.new_session_stats(session)
         work_time = stats.time_worked()
         break_time = stats.time_slacked()
 

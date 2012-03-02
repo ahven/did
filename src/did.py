@@ -28,6 +28,7 @@ import os
 import subprocess
 import sys
 from WorkLog import WorkLog
+from WorkStatsFactory import WorkStatsFactory
 from report import JobReport
 from robfile import JobListLoader, JobListWriter
 
@@ -100,7 +101,9 @@ def main():
     elif worklog.end().date() == datetime.date.today():
         worklog.append_assumed_interval(datetime.datetime.now())
 
-    report = JobReport(worklog)
+    stats_factory = WorkStatsFactory("PL")
+
+    report = JobReport(worklog, stats_factory)
     report.set_max_days(options.max_days)
     report.display()
 
