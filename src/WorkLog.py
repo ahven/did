@@ -18,6 +18,7 @@ Foobar; if not, write to the Free Software Foundation, Inc., 51 Franklin St,
 Fifth Floor, Boston, MA  02110-1301  USA
 """
 
+import datetime
 from WorkSession import WorkSession
 
 
@@ -80,3 +81,10 @@ class WorkLog(object):
 
     def sessions(self):
         return self.sessions_
+
+    def overhours(self, stats_factory):
+        overhours = datetime.timedelta(0)
+        for session in self.sessions_:
+            stats = stats_factory.new_session_stats(session)
+            overhours += stats.overhours()
+        return overhours

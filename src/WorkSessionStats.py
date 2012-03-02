@@ -58,3 +58,6 @@ class WorkSessionStats(object):
 
     def time_slacked(self):
         return self.time_slacked_
+
+    def overhours(self):
+        return self.time_worked_ - datetime.timedelta(0, 8 * 60 * 60)

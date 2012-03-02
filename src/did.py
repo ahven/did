@@ -27,6 +27,7 @@ import errno
 import os
 import subprocess
 import sys
+from SummaryReport import SummaryReport
 from WorkLog import WorkLog
 from WorkStatsFactory import WorkStatsFactory
 from report import JobReport
@@ -106,6 +107,9 @@ def main():
     report = JobReport(worklog, stats_factory)
     report.set_max_days(options.max_days)
     report.display()
+
+    summary = SummaryReport(worklog, stats_factory)
+    summary.display()
 
 if __name__ == "__main__":
     main()
