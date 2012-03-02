@@ -23,6 +23,24 @@ from colorama import Fore, Style
 from WorkSessionStats import WorkSessionStats
 
 
+def duration_to_string(diff):
+    if diff is None or diff is False:
+        return ''
+    hours = diff.days * 24 + diff.seconds / 3600
+    minutes = (diff.seconds / 60) % 60
+    time = ''
+    if '' != time or 0 < hours:
+        time += "%dh" % hours
+    time += "%dm" % minutes
+    return time
+
+def time_as_string(time):
+    if time:
+        return "%02d:%02d" % (time.hour, time.minute)
+    else:
+        return "     "
+
+
 class JobReport:
     def __init__(self, worklog, stats_factory):
         self.worklog = worklog
@@ -50,7 +68,7 @@ class JobReport:
 
         if len(session.intervals()) == 0:
             self._print_log_line(
-                    "", self.time_as_string(session.start()),
+                    "", time_as_string(session.start()),
                     Fore.RED, "arrive", "", "")
 
         for interval in session.intervals():
@@ -68,8 +86,8 @@ class JobReport:
         break_time = stats.time_slacked()
 
         print "  Worked %-6s   Slacked %s" % (
-                    self.duration_to_string(work_time),
-                    self.duration_to_string(break_time))
+                    duration_to_string(work_time),
+                    duration_to_string(break_time))
 
     def _print_interval(self, interval):
         if interval.is_break():
@@ -87,12 +105,12 @@ class JobReport:
             name += " (assumed)"
 
         self._print_log_line(
-                self.time_as_string(interval.start()),
-                self.time_as_string(interval.end()),
+                time_as_string(interval.start()),
+                time_as_string(interval.end()),
                 name_color,
                 name,
                 duration_color,
-                self.duration_to_string(interval.end() - interval.start()))
+                duration_to_string(interval.end() - interval.start()))
 
     def _print_log_line(
             self, start, end, name_color, name, duration_color, duration):
@@ -105,22 +123,3 @@ class JobReport:
                 duration_color,
                 duration,
                 Style.RESET_ALL)
-
-    @staticmethod
-    def duration_to_string(diff):
-        if diff is None or diff is False:
-            return ''
-        hours = diff.days * 24 + diff.seconds / 3600
-        minutes = (diff.seconds / 60) % 60
-        time = ''
-        if '' != time or 0 < hours:
-            time += "%dh" % hours
-        time += "%dm" % minutes
-        return time
-
-    @staticmethod
-    def time_as_string(time):
-        if time:
-            return "%02d:%02d" % (time.hour, time.minute)
-        else:
-            return "     "
