@@ -31,41 +31,62 @@ from WorkLog import WorkLog
 from WorkStatsFactory import WorkStatsFactory
 from report import JobReport
 from robfile import JobListLoader, JobListWriter
-
-def get_config_dir():
-    if 'HOME' in os.environ:
-        return os.environ['HOME'] + "/.config/did"
-    return "."
+from optparse import OptionParser
 
 
-def mkdir_p(path):
-    try:
-        os.makedirs(path)
-    except OSError as exc:
-        if exc.errno != errno.EEXIST:
-            raise
+class DidApplication:
+
+    def run(self):
+        self.parse_options()
+
+        if self.options.run_editor:
+            self.open_editor()
+
+        if not os.path.exists(self.options.logfile):
+            self.create_file(self.options.logfile)
+
+        self.worklog = WorkLog()
+        loader = JobListLoader(self.worklog)
+        loader.load(self.options.logfile)
+
+        if 0 < len(self.args):
+            self.append_event(" ".join(self.args))
+        elif self.worklog.end().date() == datetime.date.today():
+            self.worklog.append_assumed_interval(datetime.datetime.now())
+
+        stats_factory = WorkStatsFactory("PL")
+
+        report = JobReport(self.worklog, stats_factory)
+        report.set_max_days(self.options.max_days)
+        report.display()
+
+        summary = SummaryReport(self.worklog, stats_factory)
+        summary.display()
 
 
-def main():
-    from optparse import OptionParser
-    parser = OptionParser(usage="%prog [options] [CURRENT-TASK]")
-    parser.add_option("-f", "--log-file",
-                      metavar="FILE",
-                      dest="logfile",
-                      default=get_config_dir() + "/joblog",
-                      action="store",
-                      help="set the task database file")
-    parser.add_option("-e", "--edit", action="store_true", dest="run_editor",
-                      help="open the task database file in an editor")
-    parser.add_option("-l", "--last",
-                      dest="max_days",
-                      type="int",
-                      default=1,
-                      action="store",
-                      help="set the number of last work days in detailed view")
-    (options, args) = parser.parse_args()
+    def parse_options(self):
+        parser = OptionParser(usage="%prog [options] [CURRENT-TASK]")
+        parser.add_option("-f", "--log-file",
+                          metavar="FILE",
+                          dest="logfile",
+                          default=self.get_config_dir() + "/joblog",
+                          action="store",
+                          help="set the task database file")
+        parser.add_option("-e", "--edit", action="store_true",
+                          dest="run_editor",
+                          help="open the task database file in an editor")
+        parser.add_option("-l", "--last",
+                          dest="max_days",
+                          type="int",
+                          default=1,
+                          action="store",
+                          help="set the number of last work days "
+                               "in detailed view")
+        (options, args) = parser.parse_args()
+        self.options = options
+        self.args = args
 
-    if options.run_editor:
+    def open_editor(self):
         editors = []
         if os.environ.has_key('VISUAL'):
             editors.append(os.environ['VISUAL'])
@@ -75,38 +96,34 @@ def main():
                         "/usr/bin/vi", "/usr/bin/mcedit"])
         for editor in editors:
             if os.path.exists(editor):
-                subprocess.call([editor, options.logfile])
+                subprocess.call([editor, self.options.logfile])
                 sys.exit()
 
-    # Create a file if it doesn't exist
-    if not os.path.exists(options.logfile):
-        dirpart, unused_filepart = os.path.split(options.logfile)
+    def get_config_dir(self):
+        if 'HOME' in os.environ:
+            return os.environ['HOME'] + "/.config/did"
+        return "."
+
+    def mkdir_p(self, path):
+        try:
+            os.makedirs(path)
+        except OSError as exc:
+            if exc.errno != errno.EEXIST:
+                raise
+
+    def create_file(self, filename):
+        dirpart, unused_filepart = os.path.split(filename)
         if dirpart != '':
-            mkdir_p(dirpart)
-        file(options.logfile, 'a').close()
+            self.mkdir_p(dirpart)
+        file(filename, 'a').close()
 
-
-    worklog = WorkLog()
-    loader = JobListLoader(worklog)
-    loader.load(options.logfile)
-
-    if 0 < len(args):
-        writer = JobListWriter(options.logfile)
+    def append_event(self, name):
+        writer = JobListWriter(self.options.logfile)
         now = datetime.datetime.now()
-        name = " ".join(args)
         writer.append(now, name)
-        worklog.append_log_event(now, name)
-    elif worklog.end().date() == datetime.date.today():
-        worklog.append_assumed_interval(datetime.datetime.now())
+        self.worklog.append_log_event(now, name)
 
-    stats_factory = WorkStatsFactory("PL")
-
-    report = JobReport(worklog, stats_factory)
-    report.set_max_days(options.max_days)
-    report.display()
-
-    summary = SummaryReport(worklog, stats_factory)
-    summary.display()
 
 if __name__ == "__main__":
-    main()
+    did = DidApplication()
+    did.run()
