@@ -19,8 +19,8 @@ Fifth Floor, Boston, MA  02110-1301  USA
 """
 
 import datetime
-from colorama import Fore, Style
 from WorkSessionStats import WorkSessionStats
+from console_codes import Foreground, Attributes
 
 
 def duration_to_string(diff):
@@ -69,7 +69,7 @@ class JobReport:
         if len(session.intervals()) == 0:
             self._print_log_line(
                     "", time_as_string(session.start()),
-                    Fore.RED, "arrive", "", "")
+                    Foreground.red, "arrive", "", "")
 
         for interval in session.intervals():
             self._print_interval(interval)
@@ -78,7 +78,7 @@ class JobReport:
 
     def _print_day_header(self, day):
         print
-        print Fore.GREEN + str(day) + Style.RESET_ALL
+        print Foreground.green + str(day) + Attributes.reset
 
     def _print_day_footer(self, session):
         stats = self.stats_factory_.new_session_stats(session)
@@ -91,14 +91,14 @@ class JobReport:
 
     def _print_interval(self, interval):
         if interval.is_break():
-            name_color = Fore.BLACK + Style.BRIGHT
+            name_color = Foreground.black + Attributes.bold
             duration_color = ""
         elif interval.is_assumed():
-            name_color = Fore.YELLOW
-            duration_color = Fore.MAGENTA
+            name_color = Foreground.brown
+            duration_color = Foreground.magenta
         else:
-            name_color = Fore.YELLOW + Style.BRIGHT
-            duration_color = Fore.MAGENTA + Style.BRIGHT
+            name_color = Foreground.brown + Attributes.bold
+            duration_color = Foreground.magenta + Attributes.bold
 
         name = interval.name()
         if interval.is_assumed():
@@ -119,7 +119,7 @@ class JobReport:
                 end,
                 name_color,
                 name,
-                Style.RESET_ALL,
+                Attributes.reset,
                 duration_color,
                 duration,
-                Style.RESET_ALL)
+                Attributes.reset)

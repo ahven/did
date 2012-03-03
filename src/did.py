@@ -21,7 +21,6 @@ Foobar; if not, write to the Free Software Foundation, Inc., 51 Franklin St,
 Fifth Floor, Boston, MA  02110-1301  USA
 """
 
-import colorama
 import datetime
 import errno
 import os
@@ -48,8 +47,6 @@ def mkdir_p(path):
 
 
 def main():
-    colorama.init()
-
     from optparse import OptionParser
     parser = OptionParser(usage="%prog [options] [CURRENT-TASK]")
     parser.add_option("-f", "--log-file",
