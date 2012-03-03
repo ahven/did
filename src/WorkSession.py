@@ -57,3 +57,15 @@ class WorkSession(object):
 
     def intervals(self):
         return self.intervals_
+
+    def last_break_interval(self):
+        for interval in reversed(self.intervals_):
+            if interval.is_break():
+                return interval
+        return None
+
+    def last_work_interval(self):
+        for interval in reversed(self.intervals_):
+            if not interval.is_break():
+                return interval
+        return None

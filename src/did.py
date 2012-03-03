@@ -118,6 +118,21 @@ class DidApplication:
         file(filename, 'a').close()
 
     def append_event(self, name):
+        if name == ".":
+            # Last break interval
+            last_break = self.worklog.last_break_interval()
+            if last_break is None:
+                name = ".break"
+            else:
+                name = last_break.name()
+        elif name == ",":
+            # Last work interval
+            last_work = self.worklog.last_work_interval()
+            if last_work is None:
+                name = "work"
+            else:
+                name = last_work.name()
+
         writer = JobListWriter(self.options.logfile)
         now = datetime.datetime.now()
         writer.append(now, name)
