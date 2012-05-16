@@ -36,9 +36,10 @@ class JobListLoader:
                     parts = list(m.groups())
                     text = parts.pop()
                     for i in xrange(len(parts)):
-                        parts[i] = int(parts[i])
-                    while len(parts) < 6:
-                        parts.append(0)
+                        if parts[i] is None:
+                            parts[i] = 0
+                        else:
+                            parts[i] = int(parts[i])
                     year, month, day, hour, minute, second = parts
                     dt = datetime.datetime(
                                         year, month, day, hour, minute, second)
