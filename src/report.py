@@ -50,15 +50,6 @@ class JobReport:
     def __init__(self, worklog, stats_factory):
         self.worklog = worklog
         self.stats_factory_ = stats_factory
-        self.max_days = None
-
-    def set_max_days(self, max_days=None):
-        """Set the maximum number of sessions to be displayed
-
-        Only the last max_days number of sessions will be displayed.
-        Use None for no limit of the number of sessions.
-        """
-        self.max_days = max_days
 
     def display(self):
         index = 0
@@ -68,8 +59,7 @@ class JobReport:
             index += 1
             stats = self.stats_factory_.new_session_stats(session)
             self.total_overtime += stats.overhours()
-            if self.max_days is None or index + self.max_days > len(sessions):
-                self._print_session(session, stats)
+            self._print_session(session, stats)
 
     def _print_session(self, session, stats):
         self._print_day_header(session.start().date())

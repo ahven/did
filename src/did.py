@@ -57,7 +57,6 @@ class DidApplication:
         stats_factory = WorkStatsFactory("PL")
 
         report = JobReport(self.worklog, stats_factory)
-        report.set_max_days(self.options.max_days)
         report.display()
 
 
@@ -72,13 +71,6 @@ class DidApplication:
         parser.add_option("-e", "--edit", action="store_true",
                           dest="run_editor",
                           help="open the task database file in an editor")
-        parser.add_option("-l", "--last",
-                          dest="max_days",
-                          type="int",
-                          default=1,
-                          action="store",
-                          help="set the number of last work days "
-                               "in detailed view")
         (options, args) = parser.parse_args()
         self.options = options
         self.args = args
