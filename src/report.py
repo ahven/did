@@ -82,10 +82,15 @@ class JobReport:
         stats = self.stats_factory_.new_session_stats(session)
         work_time = stats.time_worked()
         break_time = stats.time_slacked()
+        overtime = stats.overhours();
+        if overtime.total_seconds() >= 0:
+            over_str = "Overtime " + duration_to_string(overtime)
+        else:
+            over_str = "Undertime " + duration_to_string(-overtime)
 
-        print "  Worked %-6s   Slacked %s" % (
+        print "  Worked %-6s   Slacked %-6s   %s" % (
                     duration_to_string(work_time),
-                    duration_to_string(break_time))
+                    duration_to_string(break_time), over_str)
 
     def _print_interval(self, interval):
         if interval.is_break():
