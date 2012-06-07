@@ -51,8 +51,9 @@ class DidApplication:
 
         if 0 < len(self.args):
             self.append_event(" ".join(self.args))
-        elif self.worklog.end().date() == datetime.date.today():
-            self.worklog.append_assumed_interval(datetime.datetime.now())
+        elif self.worklog.end():
+            if self.worklog.end().date() == datetime.date.today():
+                self.worklog.append_assumed_interval(datetime.datetime.now())
 
         stats_factory = WorkStatsFactory("PL")
 
