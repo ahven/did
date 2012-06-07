@@ -20,6 +20,7 @@ Fifth Floor, Boston, MA  02110-1301  USA
 
 import datetime
 import re
+from WorkLog import NonChronologicalOrderError
 
 class JobListLoader:
     def __init__(self, worklog):
@@ -46,6 +47,9 @@ class JobListLoader:
                     self.worklog.append_log_event(dt, text)
                 elif not re.match("#|\s*$", line):
                     raise Exception("Invalid line", line)
+        except NonChronologicalOrderError as err:
+            print "Error: Non-chronological entries: appending", \
+                    err.appended_datetime, "after", err.last_datetime
         except IOError as err:
             print "Error opening/reading from file '{0}': {1}".format(
                                                     err.filename, err.strerror)
