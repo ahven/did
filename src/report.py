@@ -19,15 +19,22 @@ Fifth Floor, Boston, MA  02110-1301  USA
 """
 
 from console_codes import Foreground, Attributes
+import datetime
 
 
 def duration_to_string(diff):
     if diff is None or diff is False:
         return ''
-    hours = diff.days * 24 + diff.seconds / 3600
-    minutes = (diff.seconds / 60) % 60
+    total_seconds = diff.total_seconds()
     time = ''
-    if '' != time or 0 < hours:
+    if diff.total_seconds() < 0:
+        time = '-'
+        total_seconds = -total_seconds
+
+    hours = total_seconds / 3600
+    minutes = (total_seconds / 60) % 60
+
+    if 0 < hours:
         time += "%dh" % hours
     time += "%dm" % minutes
     return time
