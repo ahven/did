@@ -63,9 +63,11 @@ class JobReport:
     def display(self):
         index = 0
         sessions = self.worklog.sessions()
+        self.total_overtime = datetime.timedelta(0)
         for session in sessions:
             index += 1
             stats = self.stats_factory_.new_session_stats(session)
+            self.total_overtime += stats.overhours()
             if self.max_days is None or index + self.max_days > len(sessions):
                 self._print_session(session, stats)
 
@@ -91,10 +93,11 @@ class JobReport:
         break_time = stats.time_slacked()
         overtime = stats.overhours();
 
-        print "  Worked %-6s   Slacked %-6s   Overtime %s" % (
+        print "  Worked %-6s   Slacked %-6s   Overtime %-6s (total %s)" % (
                     duration_to_string(work_time),
                     duration_to_string(break_time),
-                    duration_to_string(overtime))
+                    duration_to_string(overtime),
+                    duration_to_string(self.total_overtime))
 
     def _print_interval(self, interval):
         if interval.is_break():
