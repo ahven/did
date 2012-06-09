@@ -58,10 +58,11 @@ class JobReport:
         sessions = self.worklog.sessions()
         for session in sessions:
             index += 1
+            stats = self.stats_factory_.new_session_stats(session)
             if self.max_days is None or index + self.max_days > len(sessions):
-                self._print_session(session)
+                self._print_session(session, stats)
 
-    def _print_session(self, session):
+    def _print_session(self, session, stats):
         self._print_day_header(session.start().date())
 
         if len(session.intervals()) == 0:
@@ -72,14 +73,13 @@ class JobReport:
         for interval in session.intervals():
             self._print_interval(interval)
 
-        self._print_day_footer(session)
+        self._print_day_footer(session, stats)
 
     def _print_day_header(self, day):
         print
         print Foreground.green + str(day) + Attributes.reset
 
-    def _print_day_footer(self, session):
-        stats = self.stats_factory_.new_session_stats(session)
+    def _print_day_footer(self, session, stats):
         work_time = stats.time_worked()
         break_time = stats.time_slacked()
         overtime = stats.overhours();
