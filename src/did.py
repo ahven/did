@@ -26,7 +26,6 @@ import errno
 import os
 import subprocess
 import sys
-from SummaryReport import SummaryReport
 from WorkLog import WorkLog
 from WorkStatsFactory import WorkStatsFactory
 from report import JobReport
@@ -60,9 +59,6 @@ class DidApplication:
         report = JobReport(self.worklog, stats_factory)
         report.set_max_days(self.options.max_days)
         report.display()
-
-        summary = SummaryReport(self.worklog, stats_factory)
-        summary.display()
 
 
     def parse_options(self):
