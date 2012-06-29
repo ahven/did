@@ -54,8 +54,9 @@ class WorkLog(object):
         self.sessions_ = []
 
     def _check_chronology(self, datetime):
-        if self.end() != None and self.end() > datetime:
-            raise NonChronologicalOrderError(self.end(), datetime)
+        end = self.end()
+        if end != None and end > datetime:
+            raise NonChronologicalOrderError(end, datetime)
 
     def append_log_event(self, datetime, text):
         self._check_chronology(datetime)
