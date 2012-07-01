@@ -31,6 +31,7 @@ from WorkStatsFactory import WorkStatsFactory
 from report import JobReport
 from robfile import JobListLoader, JobListWriter
 from optparse import OptionParser
+from DayRange import DayRange
 
 
 class DidApplication:
@@ -57,7 +58,7 @@ class DidApplication:
         stats_factory = WorkStatsFactory("PL")
 
         report = JobReport(self.worklog, stats_factory)
-        report.display()
+        report.display(DayRange(self.options.range))
 
 
     def parse_options(self):
@@ -71,6 +72,11 @@ class DidApplication:
         parser.add_option("-e", "--edit", action="store_true",
                           dest="run_editor",
                           help="open the task database file in an editor")
+        parser.add_option("-r", "--range",
+                          dest="range",
+                          default="..",
+                          action="store",
+                          help="print log for days within given range")
         (options, args) = parser.parse_args()
         self.options = options
         self.args = args

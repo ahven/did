@@ -51,7 +51,7 @@ class JobReport:
         self.worklog = worklog
         self.stats_factory_ = stats_factory
 
-    def display(self):
+    def display(self, day_range):
         index = 0
         sessions = self.worklog.sessions()
         self.total_overtime = datetime.timedelta(0)
@@ -59,7 +59,8 @@ class JobReport:
             index += 1
             stats = self.stats_factory_.new_session_stats(session)
             self.total_overtime += stats.overhours()
-            self._print_session(session, stats)
+            if day_range.contains(session.start().date()):
+                self._print_session(session, stats)
 
     def _print_session(self, session, stats):
         self._print_day_header(session.start().date())
