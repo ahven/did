@@ -77,7 +77,10 @@ class DayRange:
         return self._first <= self._last
 
     def set_range_text(self, range_specs):
-        if not DayRange.patterns.dispatch(self, range_specs):
+        try:
+            if not DayRange.patterns.dispatch(self, range_specs):
+                raise InvalidRangeFormatError(range_specs)
+        except ValueError:
             raise InvalidRangeFormatError(range_specs)
 
     def set_range(self, first, last):
