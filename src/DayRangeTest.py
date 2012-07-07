@@ -68,6 +68,15 @@ class DayRangeTest(unittest.TestCase):
 
         self.verifyInvalid("32")
 
+    def testXDaysAgo(self):
+        today = datetime.date.today()
+        self.verify("-1", today - datetime.timedelta(1),
+                    today - datetime.timedelta(1))
+        self.verify("-300", today - datetime.timedelta(300),
+                    today - datetime.timedelta(300))
+        self.verify("-0", today, today)
+        self.verifyInvalid("-01")
+
     def testRange(self):
         self.verify("2012-03-30..2012-06-20", d(2012, 3, 30), d(2012, 6, 20))
 

@@ -56,6 +56,7 @@ class DayRange:
      * YYYYMMDD
      * MM-DD, M-DD
      * DD, D
+     * -X : X days ago
 
     Range formats:
      * <first>..<last>
@@ -129,6 +130,12 @@ class DayRange:
                 year = year - 1
 
         self._first = datetime.date(year, month, day)
+        self._last = self._first
+
+    @patterns.register(r'^-(0|[1-9][0-9]*)$')
+    def _pattern_x_days_ago(self, groups):
+        today = datetime.date.today()
+        self._first = today - datetime.timedelta(int(groups[0]))
         self._last = self._first
 
     @patterns.register(r'^([^.]*)\.\.([^.]*)$')
