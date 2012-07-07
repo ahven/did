@@ -53,6 +53,7 @@ class DayRange:
 
     One day formats:
      * YYYY-MM-DD
+     * YYYYMMDD
 
     Range formats:
      * <first>..<last>
@@ -87,10 +88,10 @@ class DayRange:
         return self._first <= date and date <= self._last
 
     @patterns.register(
-            r'^([12][0-9]{3})-(0[1-9]|1[012])-(0[1-9]|[12][0-9]|3[01])$')
+            r'^([12][0-9]{3})(-?)(0[1-9]|1[012])\2(0[1-9]|[12][0-9]|3[01])$')
     def _pattern_yyyy_mm_dd(self, groups):
         self._first = datetime.date(
-                int(groups[0]), int(groups[1]), int(groups[2]))
+                int(groups[0]), int(groups[2]), int(groups[3]))
         self._last = self._first
 
     @patterns.register(r'^([^.]*)\.\.([^.]*)$')

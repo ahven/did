@@ -27,6 +27,14 @@ class DayRangeTest(unittest.TestCase):
         self.verifyInvalid("2012-00-01")
         self.verifyInvalid("2012-12-32")
 
+    def testYYYYMMDD(self):
+        self.verify("20120530", d(2012, 5, 30), d(2012, 5, 30))
+        self.verifyInvalid("20121301")
+        self.verifyInvalid("20120001")
+        self.verifyInvalid("20121232")
+        self.verifyInvalid("2012-0707")
+        self.verifyInvalid("201207-07")
+
     def testRange(self):
         self.verify("2012-03-30..2012-06-20", d(2012, 3, 30), d(2012, 6, 20))
 
