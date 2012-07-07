@@ -138,6 +138,11 @@ class DayRange:
         self._first = today - datetime.timedelta(int(groups[0]))
         self._last = self._first
 
+    @patterns.register(r'^0$')
+    def _pattern_today(self, groups):
+        self._first = datetime.date.today()
+        self._last = self._first
+
     @patterns.register(r'^([^.]*)\.\.([^.]*)$')
     def _pattern_first_last(self, groups):
         if groups[0] == '':
