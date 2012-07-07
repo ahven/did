@@ -37,6 +37,24 @@ class DayRangeTest(unittest.TestCase):
         self.verifyInvalid("2012-0707")
         self.verifyInvalid("201207-07")
 
+    def testMMDD(self):
+        today = datetime.date.today()
+        yesterday = today - datetime.timedelta(1)
+        tomorrow = today + datetime.timedelta(1)
+
+        self.verify("1-01", d(today.year, 1, 1), d(today.year, 1, 1))
+        self.verify("01-01", d(today.year, 1, 1), d(today.year, 1, 1))
+        self.verify("%d-%02d" % (today.month, today.day), today, today)
+        self.verify("%d-%02d" % (yesterday.month, yesterday.day),
+                    yesterday, yesterday)
+        self.verify("%d-%02d" % (tomorrow.month, tomorrow.day),
+                    d(tomorrow.year - 1, tomorrow.month, tomorrow.day),
+                    d(tomorrow.year - 1, tomorrow.month, tomorrow.day))
+
+        self.verifyInvalid("13-01")
+        self.verifyInvalid("02-30")
+        self.verifyInvalid("4-31")
+
     def testRange(self):
         self.verify("2012-03-30..2012-06-20", d(2012, 3, 30), d(2012, 6, 20))
 

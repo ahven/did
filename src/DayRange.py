@@ -54,6 +54,7 @@ class DayRange:
     One day formats:
      * YYYY-MM-DD
      * YYYYMMDD
+     * MM-DD, M-DD
 
     Range formats:
      * <first>..<last>
@@ -95,6 +96,22 @@ class DayRange:
     def _pattern_yyyy_mm_dd(self, groups):
         self._first = datetime.date(
                 int(groups[0]), int(groups[2]), int(groups[3]))
+        self._last = self._first
+
+    @patterns.register(r'^(0?[1-9]|1[012])-(0[1-9]|[12][0-9]|3[01])$')
+    def _pattern_mm_dd(self, groups):
+        today = datetime.date.today()
+        month = int(groups[0])
+        day = int(groups[1])
+
+        if month > today.month or (month == today.month and day > today.day):
+            # Month-day is past today in this year.  Use the last year.
+            year = today.year - 1
+        else:
+            # Month-day is today or less.  Use the current year.
+            year = today.year
+
+        self._first = datetime.date(year, month, day)
         self._last = self._first
 
     @patterns.register(r'^([^.]*)\.\.([^.]*)$')
