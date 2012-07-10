@@ -74,7 +74,7 @@ class DidApplication:
                           help="open the task database file in an editor")
         parser.add_option("-r", "--range",
                           dest="range",
-                          default="..",
+                          default="0",
                           action="store",
                           help="print log for days within given range")
         (options, args) = parser.parse_args()
