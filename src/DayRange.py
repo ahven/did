@@ -7,6 +7,18 @@ Created on 2012-06-04
 import datetime
 import re
 
+
+# http://stackoverflow.com/questions/304256/whats-the-best-way-to-find-the-inverse-of-datetime-isocalendar
+def iso_to_gregorian(iso_year, iso_week, iso_day):
+    "Gregorian calendar date for the given ISO year, week and day"
+
+    fourth_jan = datetime.date(iso_year, 1, 4)
+    delta = datetime.timedelta(fourth_jan.isoweekday()-1)
+    year_start = fourth_jan - delta
+
+    return year_start + datetime.timedelta(days=iso_day-1, weeks=iso_week-1)
+
+
 class InvalidRangeFormatError(Exception):
 
     def __init__(self, range_specs):
@@ -56,6 +68,7 @@ class DayRange:
      * YYYYMMDD
      * MM-DD, M-DD
      * DD, D
+     * YYYY-Www-D
      * -X : X days ago
 
     Range formats:
@@ -130,6 +143,13 @@ class DayRange:
                 year = year - 1
 
         self._first = datetime.date(year, month, day)
+        self._last = self._first
+
+    @patterns.register(
+            r'^([12][0-9]{3})(-?)[wW](0[1-9]|[1-4][0-9]|5[0-3])\2([1-7])')
+    def _pattern_iso_week_date(self, groups):
+        self._first = iso_to_gregorian(
+                int(groups[0]), int(groups[2]), int(groups[3]))
         self._last = self._first
 
     @patterns.register(r'^-(0|[1-9][0-9]*)$')

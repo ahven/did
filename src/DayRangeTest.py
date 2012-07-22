@@ -40,6 +40,16 @@ class DayRangeTest(unittest.TestCase):
         self.verifyInvalid("2012-0707")
         self.verifyInvalid("201207-07")
 
+    def testIsoWeekDate(self):
+        self.verifyOne("2004-W53-6", d(2005, 1, 1))
+        self.verifyOne("2004-W53-7", d(2005, 1, 2))
+        self.verifyOne("2005-W52-6", d(2005, 12, 31))
+        self.verifyOne("2007-W01-1", d(2007, 1, 1))
+        self.verifyOne("2007-W52-7", d(2007, 12, 30))
+        self.verifyOne("2008-W01-1", d(2007, 12, 31))
+        self.verifyOne("2008-W01-2", d(2008, 1, 1))
+        self.verifyOne("2009-W01-1", d(2008, 12, 29))
+
     def testMMDD(self):
         today = datetime.date.today()
         yesterday = today - datetime.timedelta(1)
