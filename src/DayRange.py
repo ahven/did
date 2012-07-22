@@ -103,15 +103,18 @@ class DayRange:
         self._first = first
         self._last = last
 
+    def set_date(self, date):
+        self._first = date
+        self._last = date
+
     def contains(self, date):
         return self._first <= date and date <= self._last
 
     @patterns.register(
             r'^([12][0-9]{3})(-?)(0[1-9]|1[012])\2(0[1-9]|[12][0-9]|3[01])$')
     def _pattern_yyyy_mm_dd(self, groups):
-        self._first = datetime.date(
-                int(groups[0]), int(groups[2]), int(groups[3]))
-        self._last = self._first
+        self.set_date(
+                datetime.date(int(groups[0]), int(groups[2]), int(groups[3])))
 
     @patterns.register(r'^(0?[1-9]|1[012])-(0[1-9]|[12][0-9]|3[01])$')
     def _pattern_mm_dd(self, groups):
@@ -126,8 +129,7 @@ class DayRange:
             # Month-day is today or less.  Use the current year.
             year = today.year
 
-        self._first = datetime.date(year, month, day)
-        self._last = self._first
+        self.set_date(datetime.date(year, month, day))
 
     @patterns.register(r'^(0?[1-9]|[12][0-9]|3[01])$')
     def _pattern_dd(self, groups):
@@ -142,26 +144,22 @@ class DayRange:
                 month = 12
                 year = year - 1
 
-        self._first = datetime.date(year, month, day)
-        self._last = self._first
+        self.set_date(datetime.date(year, month, day))
 
     @patterns.register(
             r'^([12][0-9]{3})(-?)[wW](0[1-9]|[1-4][0-9]|5[0-3])\2([1-7])')
     def _pattern_iso_week_date(self, groups):
-        self._first = iso_to_gregorian(
-                int(groups[0]), int(groups[2]), int(groups[3]))
-        self._last = self._first
+        self.set_date(iso_to_gregorian(
+                    int(groups[0]), int(groups[2]), int(groups[3])))
 
     @patterns.register(r'^-(0|[1-9][0-9]*)$')
     def _pattern_x_days_ago(self, groups):
         today = datetime.date.today()
-        self._first = today - datetime.timedelta(int(groups[0]))
-        self._last = self._first
+        self.set_date(today - datetime.timedelta(int(groups[0])))
 
     @patterns.register(r'^0$')
     def _pattern_today(self, groups):
-        self._first = datetime.date.today()
-        self._last = self._first
+        self.set_date(datetime.date.today())
 
     @patterns.register(r'^([^.]*)\.\.([^.]*)$')
     def _pattern_first_last(self, groups):
