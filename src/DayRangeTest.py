@@ -88,6 +88,15 @@ class DayRangeTest(unittest.TestCase):
         today = datetime.date.today()
         self.verifyOne("0", today)
 
+    def testIsoWeek(self):
+        self.verify("2004-W53", d(2004, 12, 27), d(2005, 1, 2))
+        self.verify("2005-w52", d(2005, 12, 26), d(2006, 1, 1))
+        self.verify("2007W01", d(2007, 1, 1), d(2007, 1, 7))
+        self.verify("2007w52", d(2007, 12, 24), d(2007, 12, 30))
+        self.verifyInvalid("2007W1")
+        self.verifyInvalid("2012W0")
+        self.verifyInvalid("2012W54")
+
     def testRange(self):
         self.verify("2012-03-30..2012-06-20", d(2012, 3, 30), d(2012, 6, 20))
 

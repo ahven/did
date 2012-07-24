@@ -71,6 +71,9 @@ class DayRange:
      * YYYY-Www-D
      * -X : X days ago
 
+    Complete weeks:
+     * YYYY-Www
+
     Range formats:
      * <first>..<last>
     '''
@@ -160,6 +163,12 @@ class DayRange:
     @patterns.register(r'^0$')
     def _pattern_today(self, groups):
         self.set_date(datetime.date.today())
+
+    @patterns.register(r'^([12][0-9]{3})-?[wW](0[1-9]|[1-4][0-9]|5[0-3])$')
+    def _pattern_iso_week(self, groups):
+        self.set_range(
+                iso_to_gregorian(int(groups[0]), int(groups[1]), 1),
+                iso_to_gregorian(int(groups[0]), int(groups[1]), 7))
 
     @patterns.register(r'^([^.]*)\.\.([^.]*)$')
     def _pattern_first_last(self, groups):
