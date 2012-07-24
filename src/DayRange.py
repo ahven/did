@@ -173,7 +173,6 @@ class DayRange:
 
     @patterns.register(r'^[wW](0?[1-9]|[1-4][0-9]|5[0-3])$')
     def _pattern_w_ww(self, groups):
-        self.set_date(datetime.date.today())
         today = datetime.date.today()
         (today_year, today_week) = today.isocalendar()[0:2]
         week = int(groups[0])
