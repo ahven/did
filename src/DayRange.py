@@ -73,6 +73,7 @@ class DayRange:
 
     Complete weeks:
      * YYYY-Www
+     * Ww, Www
 
     Range formats:
      * <first>..<last>
@@ -169,6 +170,24 @@ class DayRange:
         self.set_range(
                 iso_to_gregorian(int(groups[0]), int(groups[1]), 1),
                 iso_to_gregorian(int(groups[0]), int(groups[1]), 7))
+
+    @patterns.register(r'^[wW](0?[1-9]|[1-4][0-9]|5[0-3])$')
+    def _pattern_w_ww(self, groups):
+        self.set_date(datetime.date.today())
+        today = datetime.date.today()
+        (today_year, today_week) = today.isocalendar()[0:2]
+        week = int(groups[0])
+
+        if week > today_week:
+            # Week is past current week in this year.  Use the last year.
+            year = today_year - 1
+        else:
+            # Week is current week in this year or less.  Use the current year.
+            year = today_year
+
+        self.set_range(
+                iso_to_gregorian(year, week, 1),
+                iso_to_gregorian(year, week, 7))
 
     @patterns.register(r'^([^.]*)\.\.([^.]*)$')
     def _pattern_first_last(self, groups):

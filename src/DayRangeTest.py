@@ -21,6 +21,12 @@ class DayRangeTest(unittest.TestCase):
     def verifyOne(self, text, expected):
         self.verify(text, expected, expected)
 
+    def verifySameOutput(self, text1, text2):
+        day_range1 = DayRange(text1)
+        day_range2 = DayRange(text2)
+        self.assertEqual(day_range1.first_day(), day_range2.first_day())
+        self.assertEqual(day_range1.last_day(), day_range2.last_day())
+
     def verifyInvalid(self, text):
         self.assertRaises(InvalidRangeFormatError, DayRange, text)
 
@@ -96,6 +102,17 @@ class DayRangeTest(unittest.TestCase):
         self.verifyInvalid("2007W1")
         self.verifyInvalid("2012W0")
         self.verifyInvalid("2012W54")
+
+    def testWww(self):
+        today = datetime.date.today()
+        today_iso = today.isocalendar();
+        self.verifySameOutput("W1", "%d-W01" % today.year)
+        self.verifySameOutput("W01", "%d-W01" % today.year)
+        self.verifySameOutput("w1", "%d-W01" % today.year)
+        self.verifySameOutput("w01", "%d-W01" % today.year)
+        self.verifySameOutput("W%d" % today_iso[1],
+                "%d-W%02d" % (today_iso[0], today_iso[1]))
+        self.verifyInvalid("W54")
 
     def testRange(self):
         self.verify("2012-03-30..2012-06-20", d(2012, 3, 30), d(2012, 6, 20))
