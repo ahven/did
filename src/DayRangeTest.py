@@ -127,6 +127,19 @@ class DayRangeTest(unittest.TestCase):
         self.verifyInvalid("W00")
         self.verifyInvalid("w-00")
 
+    def testXWeeksAgo(self):
+        today = datetime.date.today()
+        self.verify("W-1",
+                today - datetime.timedelta(today.weekday() + 7),
+                today - datetime.timedelta(today.weekday() + 1))
+        self.verify("W-20",
+                today - datetime.timedelta(today.weekday() + 20 * 7),
+                today - datetime.timedelta(today.weekday() + 20 * 7 - 6))
+        self.verify("W-100",
+                today - datetime.timedelta(today.weekday() + 100 * 7),
+                today - datetime.timedelta(today.weekday() + 100 * 7 - 6))
+        self.verifyInvalid("W-01")
+
     def testRange(self):
         self.verify("2012-03-30..2012-06-20", d(2012, 3, 30), d(2012, 6, 20))
 

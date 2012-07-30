@@ -194,6 +194,12 @@ class DayRange:
         self.set_range(today - datetime.timedelta(today.weekday()),
                        today + datetime.timedelta(6 - today.weekday()))
 
+    @patterns.register(r'^[wW]-([1-9][0-9]*)$')
+    def _pattern_x_weeks_ago(self, groups):
+        today = datetime.date.today()
+        start = today - datetime.timedelta(today.weekday() + 7 * int(groups[0]))
+        self.set_range(start, start + datetime.timedelta(6))
+
     @patterns.register(r'^([^.]*)\.\.([^.]*)$')
     def _pattern_first_last(self, groups):
         if groups[0] == '':
