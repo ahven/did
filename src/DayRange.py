@@ -188,6 +188,12 @@ class DayRange:
                 iso_to_gregorian(year, week, 1),
                 iso_to_gregorian(year, week, 7))
 
+    @patterns.register(r'^[wW]-?0$')
+    def _pattern_current_week(self, groups):
+        today = datetime.date.today()
+        self.set_range(today - datetime.timedelta(today.weekday()),
+                       today + datetime.timedelta(6 - today.weekday()))
+
     @patterns.register(r'^([^.]*)\.\.([^.]*)$')
     def _pattern_first_last(self, groups):
         if groups[0] == '':

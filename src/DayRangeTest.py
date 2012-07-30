@@ -21,6 +21,10 @@ class DayRangeTest(unittest.TestCase):
     def verifyOne(self, text, expected):
         self.verify(text, expected, expected)
 
+    def verifyFirstLength(self, text, expected_first, expected_num_days):
+        self.verify(text, expected_first,
+                expected_first + datetime.timedelta(expected_num_days - 1))
+
     def verifySameOutput(self, text1, text2):
         day_range1 = DayRange(text1)
         day_range2 = DayRange(text2)
@@ -113,6 +117,15 @@ class DayRangeTest(unittest.TestCase):
         self.verifySameOutput("W%d" % today_iso[1],
                 "%d-W%02d" % (today_iso[0], today_iso[1]))
         self.verifyInvalid("W54")
+
+    def testCurrentWeek(self):
+        today = datetime.date.today()
+        self.verifyFirstLength("W0", today - datetime.timedelta(today.weekday()), 7)
+        self.verifyFirstLength("w0", today - datetime.timedelta(today.weekday()), 7)
+        self.verifyFirstLength("W-0", today - datetime.timedelta(today.weekday()), 7)
+        self.verifyFirstLength("w-0", today - datetime.timedelta(today.weekday()), 7)
+        self.verifyInvalid("W00")
+        self.verifyInvalid("w-00")
 
     def testRange(self):
         self.verify("2012-03-30..2012-06-20", d(2012, 3, 30), d(2012, 6, 20))
