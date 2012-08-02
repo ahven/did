@@ -45,22 +45,29 @@ def time_as_string(time):
     else:
         return "     "
 
+def get_name_color(is_break, is_assumed):
+    if is_break:
+        return Foreground.black + Attributes.bold
+    elif is_assumed:
+        return Foreground.brown
+    else:
+        return Foreground.brown + Attributes.bold
+
+def get_duration_color(is_break, is_assumed):
+    if is_break:
+        return ""
+    elif is_assumed:
+        return Foreground.magenta
+    else:
+        return Foreground.magenta + Attributes.bold
+
+
 class SessionChronologicalDisplay:
     def display(self, session):
         for interval in session.intervals():
             self._print_interval(interval)
 
     def _print_interval(self, interval):
-        if interval.is_break():
-            name_color = Foreground.black + Attributes.bold
-            duration_color = ""
-        elif interval.is_assumed():
-            name_color = Foreground.brown
-            duration_color = Foreground.magenta
-        else:
-            name_color = Foreground.brown + Attributes.bold
-            duration_color = Foreground.magenta + Attributes.bold
-
         name = interval.name()
         if interval.is_assumed():
             name += " (assumed)"
@@ -68,9 +75,9 @@ class SessionChronologicalDisplay:
         self._print_log_line(
                 time_as_string(interval.start()),
                 time_as_string(interval.end()),
-                name_color,
+                get_name_color(interval.is_break(), interval.is_assumed()),
                 name,
-                duration_color,
+                get_duration_color(interval.is_break(), interval.is_assumed()),
                 duration_to_string(interval.end() - interval.start()))
 
     def _print_log_line(
