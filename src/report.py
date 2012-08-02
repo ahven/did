@@ -20,6 +20,7 @@ Fifth Floor, Boston, MA  02110-1301  USA
 
 from console_codes import Foreground, Attributes
 import datetime
+from WorkInterval import WorkInterval
 
 
 def duration_to_string(diff):
@@ -90,6 +91,33 @@ class SessionChronologicalDisplay:
                 Attributes.reset,
                 duration_color,
                 duration,
+                Attributes.reset)
+
+
+class SessionAggregatedDisplay:
+    def display(self, session):
+        total_time = {}
+        is_assumed = {}
+        for interval in session.intervals():
+            if interval.name() not in total_time:
+                total_time[interval.name()] = datetime.timedelta(0)
+            total_time[interval.name()] += interval.end() - interval.start()
+            is_assumed[interval.name()] = interval.is_assumed()
+
+        sorted_names = sorted(total_time, key=lambda x: total_time[x], reverse=True)
+        for name in sorted_names:
+            self._print_aggregated_interval(name, total_time[name], is_assumed[name])
+
+    def _print_aggregated_interval(self, name, total_time, is_assumed):
+        is_break = WorkInterval.name_is_break(name)
+        if is_assumed:
+            name += " (assumed)"
+        print "   %s%-6s%s  %s%s%s" % (
+                get_duration_color(is_break, is_assumed),
+                duration_to_string(total_time),
+                Attributes.reset,
+                get_name_color(is_break, is_assumed),
+                name,
                 Attributes.reset)
 
 

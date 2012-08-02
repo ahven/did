@@ -28,7 +28,8 @@ import subprocess
 import sys
 from WorkLog import WorkLog
 from WorkStatsFactory import WorkStatsFactory
-from report import JobReport
+from report import JobReport, SessionChronologicalDisplay,\
+    SessionAggregatedDisplay
 from robfile import JobListLoader, JobListWriter
 from optparse import OptionParser
 from DayRange import DayRange
@@ -57,7 +58,12 @@ class DidApplication:
 
         stats_factory = WorkStatsFactory("PL")
 
-        report = JobReport(self.worklog, stats_factory)
+        if self.options.aggregated:
+            session_display = SessionAggregatedDisplay()
+        else:
+            session_display = SessionChronologicalDisplay()
+
+        report = JobReport(self.worklog, stats_factory, session_display)
         report.display(DayRange(self.options.range))
 
 
@@ -77,6 +83,10 @@ class DidApplication:
                           default="0",
                           action="store",
                           help="print log for days within given range")
+        parser.add_option("-a", "--aggregated",
+                          action="store_true",
+                          dest="aggregated",
+                          help="display jobs aggregated for each day")
         (options, args) = parser.parse_args()
         self.options = options
         self.args = args
