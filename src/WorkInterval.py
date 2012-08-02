@@ -36,8 +36,7 @@ class WorkInterval(object):
         self.is_assumed_ = is_assumed
 
     def is_break(self):
-        # Break names start with a "." or contain "**"
-        return re.match("\\.", self.name_) or re.search("\\*\\*", self.name_)
+        return self.name_is_break(self.name_)
 
     def is_assumed(self):
         return self.is_assumed_
@@ -50,3 +49,8 @@ class WorkInterval(object):
 
     def name(self):
         return self.name_
+
+    @staticmethod
+    def name_is_break(name):
+        # Break names start with a "." or contain "**"
+        return re.match("\\.", name) or re.search("\\*\\*", name)
