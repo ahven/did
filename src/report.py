@@ -45,50 +45,10 @@ def time_as_string(time):
     else:
         return "     "
 
-
-class JobReport:
-    def __init__(self, worklog, stats_factory):
-        self.worklog = worklog
-        self.stats_factory_ = stats_factory
-
-    def display(self, day_range):
-        index = 0
-        sessions = self.worklog.sessions()
-        self.total_overtime = datetime.timedelta(0)
-        for session in sessions:
-            index += 1
-            stats = self.stats_factory_.new_session_stats(session)
-            self.total_overtime += stats.overhours()
-            if day_range.contains(session.start().date()):
-                self._print_session(session, stats)
-
-    def _print_session(self, session, stats):
-        self._print_day_header(session.start().date())
-
-        if len(session.intervals()) == 0:
-            self._print_log_line(
-                    "", time_as_string(session.start()),
-                    Foreground.red, "arrive", "", "")
-
+class SessionChronologicalDisplay:
+    def display(self, session):
         for interval in session.intervals():
             self._print_interval(interval)
-
-        self._print_day_footer(session, stats)
-
-    def _print_day_header(self, day):
-        print
-        print Foreground.green + str(day) + Attributes.reset
-
-    def _print_day_footer(self, session, stats):
-        work_time = stats.time_worked()
-        break_time = stats.time_slacked()
-        overtime = stats.overhours();
-
-        print "  Worked %-6s   Slacked %-6s   Overtime %-6s (total %s)" % (
-                    duration_to_string(work_time),
-                    duration_to_string(break_time),
-                    duration_to_string(overtime),
-                    duration_to_string(self.total_overtime))
 
     def _print_interval(self, interval):
         if interval.is_break():
@@ -124,3 +84,49 @@ class JobReport:
                 duration_color,
                 duration,
                 Attributes.reset)
+
+
+class JobReport:
+    def __init__(self, worklog, stats_factory,
+                session_display=SessionChronologicalDisplay()):
+        self.worklog = worklog
+        self.stats_factory_ = stats_factory
+        self.session_display = session_display
+
+    def display(self, day_range):
+        index = 0
+        sessions = self.worklog.sessions()
+        self.total_overtime = datetime.timedelta(0)
+        for session in sessions:
+            index += 1
+            stats = self.stats_factory_.new_session_stats(session)
+            self.total_overtime += stats.overhours()
+            if day_range.contains(session.start().date()):
+                self._print_session(session, stats)
+
+    def _print_session(self, session, stats):
+        self._print_day_header(session.start().date())
+
+        if len(session.intervals()) == 0:
+            self._print_log_line(
+                    "", time_as_string(session.start()),
+                    Foreground.red, "arrive", "", "")
+
+        self.session_display.display(session)
+
+        self._print_day_footer(session, stats)
+
+    def _print_day_header(self, day):
+        print
+        print Foreground.green + str(day) + Attributes.reset
+
+    def _print_day_footer(self, session, stats):
+        work_time = stats.time_worked()
+        break_time = stats.time_slacked()
+        overtime = stats.overhours();
+
+        print "  Worked %-6s   Slacked %-6s   Overtime %-6s (total %s)" % (
+                    duration_to_string(work_time),
+                    duration_to_string(break_time),
+                    duration_to_string(overtime),
+                    duration_to_string(self.total_overtime))
