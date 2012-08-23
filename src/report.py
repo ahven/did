@@ -140,7 +140,7 @@ class JobReport:
                 self._print_session(session, stats)
 
     def _print_session(self, session, stats):
-        self._print_day_header(session.start().date())
+        self._print_day_header(session)
 
         if len(session.intervals()) == 0:
             self.session_display.print_log_line(
@@ -151,9 +151,12 @@ class JobReport:
 
         self._print_day_footer(session, stats)
 
-    def _print_day_header(self, day):
+    def _print_day_header(self, session):
         print
-        print Foreground.green + str(day) + Attributes.reset
+        print Foreground.green + str(session.start().date()),
+        if not session.is_workday():
+            print "  (Out of office)",
+        print Attributes.reset
 
     def _print_day_footer(self, session, stats):
         work_time = stats.time_worked()

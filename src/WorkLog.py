@@ -63,6 +63,8 @@ class WorkLog(object):
 
         if text == "arrive":
             self.sessions_.append(WorkSession(datetime, True))
+        elif text == "arrive ooo":
+            self.sessions_.append(WorkSession(datetime, False))
         else:
             if len(self.sessions_) == 0:
                 raise FirstJobNotArriveError()

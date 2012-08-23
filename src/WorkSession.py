@@ -55,6 +55,9 @@ class WorkSession(object):
         else:
             return self.intervals_[-1].end()
 
+    def is_workday(self):
+        return self.is_workday_
+
     def intervals(self):
         return self.intervals_
 

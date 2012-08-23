@@ -60,4 +60,11 @@ class WorkSessionStats(object):
         return self.time_slacked_
 
     def overhours(self):
-        return self.time_worked_ - datetime.timedelta(0, 8 * 60 * 60)
+        return self.time_worked_ - self.expected_work_time()
+
+    def expected_work_time(self):
+        if self.session_.is_workday():
+            seconds = 8 * 60 * 60
+        else:
+            seconds = 0
+        return datetime.timedelta(0, seconds)
