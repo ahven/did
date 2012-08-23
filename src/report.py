@@ -73,7 +73,7 @@ class SessionChronologicalDisplay:
         if interval.is_assumed():
             name += " (assumed)"
 
-        self._print_log_line(
+        self.print_log_line(
                 time_as_string(interval.start()),
                 time_as_string(interval.end()),
                 get_name_color(interval.is_break(), interval.is_assumed()),
@@ -81,7 +81,7 @@ class SessionChronologicalDisplay:
                 get_duration_color(interval.is_break(), interval.is_assumed()),
                 duration_to_string(interval.end() - interval.start()))
 
-    def _print_log_line(
+    def print_log_line(
             self, start, end, name_color, name, duration_color, duration):
         print "  %5s .. %5s  %s%-30s%s  %s%s%s" % (
                 start,
@@ -143,7 +143,7 @@ class JobReport:
         self._print_day_header(session.start().date())
 
         if len(session.intervals()) == 0:
-            self._print_log_line(
+            self.session_display.print_log_line(
                     "", time_as_string(session.start()),
                     Foreground.red, "arrive", "", "")
 
