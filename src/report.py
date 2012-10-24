@@ -163,7 +163,7 @@ class JobReport:
         break_time = stats.time_slacked()
         overtime = stats.overhours();
 
-        print "  Worked %-6s   Slacked %-6s   Overtime %-6s (total %s)" % (
+        print "  Worked %-6s   Slacked %-6s   Overtime %-6s (running total %s)" % (
                     duration_to_string(work_time),
                     duration_to_string(break_time),
                     duration_to_string(overtime),
