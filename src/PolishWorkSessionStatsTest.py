@@ -39,8 +39,9 @@ class IntervalMock:
 
 
 class SessionMock:
-    def __init__(self):
+    def __init__(self, is_workday):
         self.intervals_ = []
+        self.is_workday_ = is_workday
 
     def intervals(self):
         return self.intervals_
@@ -49,6 +50,9 @@ class SessionMock:
         start = self._end()
         end = start + datetime.timedelta(0, seconds)
         self.intervals_.append(IntervalMock(start, end, is_break))
+
+    def is_workday(self):
+        return self.is_workday_
 
     def _end(self):
         if len(self.intervals_) == 0:
@@ -82,8 +86,9 @@ class BasicSessionTest(unittest.TestCase):
             else:
                 self.session.append_interval(interval, False)
 
-    def verify(self, intervals, expected_work_seconds, expected_break_seconds):
-        self.session = SessionMock()
+    def verify_generic(self, intervals, expected_work_seconds, expected_break_seconds,
+               is_workday):
+        self.session = SessionMock(is_workday)
         self.append_intervals(intervals)
         stats = PolishWorkSessionStats(self.session)
         expected_worktime = datetime.timedelta(0, expected_work_seconds)
@@ -91,6 +96,12 @@ class BasicSessionTest(unittest.TestCase):
 
         self.assertEquals(stats.time_worked(), expected_worktime)
         self.assertEquals(stats.time_slacked(), expected_breaktime)
+
+    def verify(self, intervals, expected_work_seconds, expected_break_seconds):
+        self.verify_generic(intervals, expected_work_seconds, expected_break_seconds, True)
+
+    def verify_ooo(self, intervals, expected_work_seconds, expected_break_seconds):
+        self.verify_generic(intervals, expected_work_seconds, expected_break_seconds, False)
 
 
     def test_only_work_adds_up(self):
@@ -129,6 +140,10 @@ class BasicSessionTest(unittest.TestCase):
     def test_15_minutes_break_applies_even_on_no_work(self):
         # Assuming you work for at least 6 hours per day
         self.verify([-20 * 60], 15 * 60, 5 * 60)
+
+    def test_ooo(self):
+        self.verify_ooo([-60 * 60], 0, 60 * 60)
+        self.verify_ooo([-60 * 60, 60 * 60], 60 * 60, 60 * 60)
 
 
 if __name__ == "__main__":

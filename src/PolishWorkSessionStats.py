@@ -78,7 +78,10 @@ class PolishWorkSessionStats(WorkSessionStats):
 
     def _analyze(self):
         self.recent_work_seconds = 0
-        self.usable_long_break_seconds = self.long_break_seconds
+        if self.session_.is_workday():
+            self.usable_long_break_seconds = self.long_break_seconds
+        else:
+            self.usable_long_break_seconds = 0
 
         for interval in self.session_.intervals():
             duration = interval.end() - interval.start()
