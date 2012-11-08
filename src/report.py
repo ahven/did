@@ -62,8 +62,38 @@ def get_duration_color(is_break, is_assumed):
     else:
         return Foreground.magenta + Attributes.bold
 
+class SessionDisplay:
+    def display_session(self, session, stats, total_overtime):
+        self.print_day_header(session)
 
-class SessionChronologicalDisplay:
+        if len(session.intervals()) == 0:
+            self.print_log_line(
+                    "", time_as_string(session.start()),
+                    Foreground.red, "arrive", "", "")
+
+        self.display(session)
+
+        self.print_day_footer(session, stats, total_overtime)
+
+    def print_day_header(self, session):
+        print
+        print Foreground.green + str(session.start().date()),
+        if not session.is_workday():
+            print "  (Out of office)",
+        print Attributes.reset
+
+    def print_day_footer(self, session, stats, total_overtime):
+        work_time = stats.time_worked()
+        break_time = stats.time_slacked()
+        overtime = stats.overhours();
+
+        print "  Worked %-6s   Slacked %-6s   Overtime %-6s (running total %s)" % (
+                    duration_to_string(work_time),
+                    duration_to_string(break_time),
+                    duration_to_string(overtime),
+                    duration_to_string(total_overtime))
+
+class SessionChronologicalDisplay(SessionDisplay):
     def display(self, session):
         for interval in session.intervals():
             self._print_interval(interval)
@@ -94,7 +124,7 @@ class SessionChronologicalDisplay:
                 Attributes.reset)
 
 
-class SessionAggregatedDisplay:
+class SessionAggregatedDisplay(SessionDisplay):
     def display(self, session):
         total_time = {}
         is_assumed = {}
@@ -137,34 +167,5 @@ class JobReport:
             stats = self.stats_factory_.new_session_stats(session)
             self.total_overtime += stats.overhours()
             if day_range.contains(session.start().date()):
-                self._print_session(session, stats)
-
-    def _print_session(self, session, stats):
-        self._print_day_header(session)
-
-        if len(session.intervals()) == 0:
-            self.session_display.print_log_line(
-                    "", time_as_string(session.start()),
-                    Foreground.red, "arrive", "", "")
-
-        self.session_display.display(session)
-
-        self._print_day_footer(session, stats)
-
-    def _print_day_header(self, session):
-        print
-        print Foreground.green + str(session.start().date()),
-        if not session.is_workday():
-            print "  (Out of office)",
-        print Attributes.reset
-
-    def _print_day_footer(self, session, stats):
-        work_time = stats.time_worked()
-        break_time = stats.time_slacked()
-        overtime = stats.overhours();
-
-        print "  Worked %-6s   Slacked %-6s   Overtime %-6s (running total %s)" % (
-                    duration_to_string(work_time),
-                    duration_to_string(break_time),
-                    duration_to_string(overtime),
-                    duration_to_string(self.total_overtime))
+                self.session_display.display_session(
+                        session, stats, self.total_overtime)
