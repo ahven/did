@@ -65,9 +65,17 @@ def get_duration_color(is_break, is_assumed):
 class SessionDisplay:
 
     def display(self, worklog, day_range):
+        self.print_header()
         for session in worklog.sessions():
             if day_range.contains(session.start().date()):
                 self.print_session(session)
+        self.print_footer()
+
+    def print_header(self):
+        pass
+
+    def print_footer(self):
+        pass
 
     def print_session(self, session):
         self.print_session_header(session)
