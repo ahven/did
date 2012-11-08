@@ -105,3 +105,11 @@ class WorkLog(object):
             if last_work is not None:
                 return last_work
         return None
+
+    def compute_stats(self, stats_factory):
+        total_overtime = datetime.timedelta(0)
+        for session in self.sessions_:
+            stats = stats_factory.new_session_stats(session)
+            total_overtime += stats.overhours()
+            session.set_stats(stats)
+            session.set_total_overtime(total_overtime)

@@ -56,14 +56,14 @@ class DidApplication:
             if self.worklog.end().date() == datetime.date.today():
                 self.worklog.append_assumed_interval(datetime.datetime.now())
 
-        stats_factory = WorkStatsFactory("PL")
+        self.worklog.compute_stats(WorkStatsFactory("PL"))
 
         if self.options.aggregated:
             session_display = SessionAggregatedDisplay()
         else:
             session_display = SessionChronologicalDisplay()
 
-        report = JobReport(self.worklog, stats_factory, session_display)
+        report = JobReport(self.worklog, session_display)
         report.display(DayRange(self.options.range))
 
 

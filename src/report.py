@@ -63,7 +63,7 @@ def get_duration_color(is_break, is_assumed):
         return Foreground.magenta + Attributes.bold
 
 class SessionDisplay:
-    def display_session(self, session, stats, total_overtime):
+    def display_session(self, session):
         self.print_day_header(session)
 
         if len(session.intervals()) == 0:
@@ -73,7 +73,7 @@ class SessionDisplay:
 
         self.display(session)
 
-        self.print_day_footer(session, stats, total_overtime)
+        self.print_day_footer(session)
 
     def print_day_header(self, session):
         print
@@ -82,16 +82,16 @@ class SessionDisplay:
             print "  (Out of office)",
         print Attributes.reset
 
-    def print_day_footer(self, session, stats, total_overtime):
-        work_time = stats.time_worked()
-        break_time = stats.time_slacked()
-        overtime = stats.overhours();
+    def print_day_footer(self, session):
+        work_time = session.stats().time_worked()
+        break_time = session.stats().time_slacked()
+        overtime = session.stats().overhours();
 
         print "  Worked %-6s   Slacked %-6s   Overtime %-6s (running total %s)" % (
                     duration_to_string(work_time),
                     duration_to_string(break_time),
                     duration_to_string(overtime),
-                    duration_to_string(total_overtime))
+                    duration_to_string(session.total_overtime()))
 
 class SessionChronologicalDisplay(SessionDisplay):
     def display(self, session):
@@ -152,20 +152,12 @@ class SessionAggregatedDisplay(SessionDisplay):
 
 
 class JobReport:
-    def __init__(self, worklog, stats_factory,
-                session_display=SessionChronologicalDisplay()):
+    def __init__(self, worklog, session_display):
         self.worklog = worklog
-        self.stats_factory_ = stats_factory
         self.session_display = session_display
 
     def display(self, day_range):
-        index = 0
         sessions = self.worklog.sessions()
-        self.total_overtime = datetime.timedelta(0)
         for session in sessions:
-            index += 1
-            stats = self.stats_factory_.new_session_stats(session)
-            self.total_overtime += stats.overhours()
             if day_range.contains(session.start().date()):
-                self.session_display.display_session(
-                        session, stats, self.total_overtime)
+                self.session_display.display_session(session)

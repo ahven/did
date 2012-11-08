@@ -72,3 +72,15 @@ class WorkSession(object):
             if not interval.is_break():
                 return interval
         return None
+
+    def set_stats(self, stats):
+        self.stats_ = stats
+
+    def set_total_overtime(self, total_overtime):
+        self.total_overtime_ = total_overtime
+
+    def stats(self):
+        return self.stats_
+
+    def total_overtime(self):
+        return self.total_overtime_
