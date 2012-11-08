@@ -72,11 +72,6 @@ class SessionDisplay:
     def display_session(self, session):
         self.print_day_header(session)
 
-        if len(session.intervals()) == 0:
-            self.print_log_line(
-                    "", time_as_string(session.start()),
-                    Foreground.red, "arrive", "", "")
-
         self.display_session_intervals(session)
 
         self.print_day_footer(session)
@@ -101,6 +96,11 @@ class SessionDisplay:
 
 class SessionChronologicalDisplay(SessionDisplay):
     def display_session_intervals(self, session):
+        if len(session.intervals()) == 0:
+            self.print_log_line(
+                    "", time_as_string(session.start()),
+                    Foreground.red, "arrive", "", "")
+
         for interval in session.intervals():
             self._print_interval(interval)
 
