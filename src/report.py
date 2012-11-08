@@ -138,7 +138,7 @@ class SessionChronologicalDisplay(SessionDisplay):
                 Attributes.reset)
 
 
-class SessionAggregatedDisplay(SessionDisplay):
+class SessionAggregateDayDisplay(SessionDisplay):
     def print_session_intervals(self, session):
         total_time = {}
         is_assumed = {}
