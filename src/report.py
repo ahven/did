@@ -67,23 +67,21 @@ class SessionDisplay:
     def display(self, worklog, day_range):
         for session in worklog.sessions():
             if day_range.contains(session.start().date()):
-                self.display_session(session)
+                self.print_session(session)
 
-    def display_session(self, session):
-        self.print_day_header(session)
+    def print_session(self, session):
+        self.print_session_header(session)
+        self.print_session_intervals(session)
+        self.print_session_footer(session)
 
-        self.display_session_intervals(session)
-
-        self.print_day_footer(session)
-
-    def print_day_header(self, session):
+    def print_session_header(self, session):
         print
         print Foreground.green + str(session.start().date()),
         if not session.is_workday():
             print "  (Out of office)",
         print Attributes.reset
 
-    def print_day_footer(self, session):
+    def print_session_footer(self, session):
         work_time = session.stats().time_worked()
         break_time = session.stats().time_slacked()
         overtime = session.stats().overhours();
@@ -95,7 +93,7 @@ class SessionDisplay:
                     duration_to_string(session.total_overtime()))
 
 class SessionChronologicalDisplay(SessionDisplay):
-    def display_session_intervals(self, session):
+    def print_session_intervals(self, session):
         if len(session.intervals()) == 0:
             self.print_log_line(
                     "", time_as_string(session.start()),
@@ -131,7 +129,7 @@ class SessionChronologicalDisplay(SessionDisplay):
 
 
 class SessionAggregatedDisplay(SessionDisplay):
-    def display_session_intervals(self, session):
+    def print_session_intervals(self, session):
         total_time = {}
         is_assumed = {}
         for interval in session.intervals():
