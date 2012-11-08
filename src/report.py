@@ -63,6 +63,12 @@ def get_duration_color(is_break, is_assumed):
         return Foreground.magenta + Attributes.bold
 
 class SessionDisplay:
+
+    def display(self, worklog, day_range):
+        for session in worklog.sessions():
+            if day_range.contains(session.start().date()):
+                self.display_session(session)
+
     def display_session(self, session):
         self.print_day_header(session)
 
@@ -71,7 +77,7 @@ class SessionDisplay:
                     "", time_as_string(session.start()),
                     Foreground.red, "arrive", "", "")
 
-        self.display(session)
+        self.display_session_intervals(session)
 
         self.print_day_footer(session)
 
@@ -94,7 +100,7 @@ class SessionDisplay:
                     duration_to_string(session.total_overtime()))
 
 class SessionChronologicalDisplay(SessionDisplay):
-    def display(self, session):
+    def display_session_intervals(self, session):
         for interval in session.intervals():
             self._print_interval(interval)
 
@@ -125,7 +131,7 @@ class SessionChronologicalDisplay(SessionDisplay):
 
 
 class SessionAggregatedDisplay(SessionDisplay):
-    def display(self, session):
+    def display_session_intervals(self, session):
         total_time = {}
         is_assumed = {}
         for interval in session.intervals():
@@ -149,15 +155,3 @@ class SessionAggregatedDisplay(SessionDisplay):
                 get_name_color(is_break, is_assumed),
                 name,
                 Attributes.reset)
-
-
-class JobReport:
-    def __init__(self, worklog, session_display):
-        self.worklog = worklog
-        self.session_display = session_display
-
-    def display(self, day_range):
-        sessions = self.worklog.sessions()
-        for session in sessions:
-            if day_range.contains(session.start().date()):
-                self.session_display.display_session(session)

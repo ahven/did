@@ -28,8 +28,7 @@ import subprocess
 import sys
 from WorkLog import WorkLog
 from WorkStatsFactory import WorkStatsFactory
-from report import JobReport, SessionChronologicalDisplay,\
-    SessionAggregatedDisplay
+from report import SessionChronologicalDisplay, SessionAggregatedDisplay
 from robfile import JobListLoader, JobListWriter
 from optparse import OptionParser
 from DayRange import DayRange
@@ -63,8 +62,7 @@ class DidApplication:
         else:
             session_display = SessionChronologicalDisplay()
 
-        report = JobReport(self.worklog, session_display)
-        report.display(DayRange(self.options.range))
+        session_display.display(self.worklog, DayRange(self.options.range))
 
 
     def parse_options(self):
