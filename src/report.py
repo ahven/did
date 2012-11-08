@@ -77,7 +77,19 @@ class SessionDisplay:
         pass
 
     def print_footer(self):
-        pass
+        if len(self.sessions) > 1:
+            work_time = datetime.timedelta(0)
+            break_time = datetime.timedelta(0)
+            overtime = datetime.timedelta(0)
+            for session in self.sessions:
+                work_time += session.stats().time_worked()
+                break_time += session.stats().time_slacked()
+                overtime += session.stats().overhours();
+            print
+            print "Overall:  Worked %-6s   Slacked %-6s   Overtime %-6s" % (
+                    duration_to_string(work_time),
+                    duration_to_string(break_time),
+                    duration_to_string(overtime))
 
     def print_session(self, session):
         self.print_session_header(session)
@@ -185,6 +197,7 @@ class SessionAggregateRangeDisplay(SessionAggregateDayDisplay):
 
     def print_footer(self):
         self.aggregation_end()
+        SessionDisplay.print_footer(self)
 
     def print_session_intervals(self, session):
         self.aggregation_add_session(session)
