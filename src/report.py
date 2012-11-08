@@ -138,19 +138,25 @@ class SessionChronologicalDisplay(SessionDisplay):
                 Attributes.reset)
 
 
-class SessionAggregateDayDisplay(SessionDisplay):
-    def print_session_intervals(self, session):
-        total_time = {}
-        is_assumed = {}
-        for interval in session.intervals():
-            if interval.name() not in total_time:
-                total_time[interval.name()] = datetime.timedelta(0)
-            total_time[interval.name()] += interval.end() - interval.start()
-            is_assumed[interval.name()] = interval.is_assumed()
+class SessionAggregateDisplay(SessionDisplay):
+    def aggregation_begin(self):
+        self.total_time = {}
+        self.is_assumed = {}
 
-        sorted_names = sorted(total_time, key=lambda x: total_time[x], reverse=True)
+    def aggregation_add_session(self, session):
+        for interval in session.intervals():
+            if interval.name() not in self.total_time:
+                self.total_time[interval.name()] = datetime.timedelta(0)
+            self.total_time[interval.name()] += \
+                    interval.end() - interval.start()
+            self.is_assumed[interval.name()] = interval.is_assumed()
+
+    def aggregation_end(self):
+        sorted_names = sorted(
+                self.total_time, key=lambda x: self.total_time[x], reverse=True)
         for name in sorted_names:
-            self._print_aggregated_interval(name, total_time[name], is_assumed[name])
+            self._print_aggregated_interval(
+                    name, self.total_time[name], self.is_assumed[name])
 
     def _print_aggregated_interval(self, name, total_time, is_assumed):
         is_break = WorkInterval.name_is_break(name)
@@ -163,3 +169,28 @@ class SessionAggregateDayDisplay(SessionDisplay):
                 get_name_color(is_break, is_assumed),
                 name,
                 Attributes.reset)
+
+
+class SessionAggregateDayDisplay(SessionAggregateDisplay):
+    def print_session_intervals(self, session):
+        self.aggregation_begin()
+        self.aggregation_add_session(session)
+        self.aggregation_end()
+
+
+class SessionAggregateRangeDisplay(SessionAggregateDayDisplay):
+
+    def print_header(self):
+        self.aggregation_begin()
+
+    def print_footer(self):
+        self.aggregation_end()
+
+    def print_session_intervals(self, session):
+        self.aggregation_add_session(session)
+
+    def print_session_header(self, session):
+        pass
+
+    def print_session_footer(self, session):
+        pass
