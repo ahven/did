@@ -150,37 +150,107 @@ class SessionChronologicalDisplay(SessionDisplay):
                 Attributes.reset)
 
 
-class SessionAggregateDisplay(SessionDisplay):
-    def aggregation_begin(self):
-        self.total_time = {}
-        self.is_assumed = {}
+class AggregateTreeNode:
+    def __init__(self):
+        self.children = {}
 
-    def aggregation_add_session(self, session):
-        for interval in session.intervals():
-            if interval.name() not in self.total_time:
-                self.total_time[interval.name()] = datetime.timedelta(0)
-            self.total_time[interval.name()] += \
-                    interval.end() - interval.start()
-            self.is_assumed[interval.name()] = interval.is_assumed()
+    def add_interval(self, name_words, duration, is_assumed):
+        if duration == datetime.timedelta(0):
+            return
+        if len(name_words) == 0:
+            if is_assumed:
+                name = '(assumed)'
+            else:
+                name = ''
+            if not name in self.children:
+                self.children[name] = datetime.timedelta(0)
+            self.children[name] += duration
+        else:
+            if name_words[0] not in self.children:
+                self.children[name_words[0]] = AggregateTreeNode()
+            self.children[name_words[0]].add_interval(
+                    name_words[1:], duration, is_assumed)
 
-    def aggregation_end(self):
+    def get_child_duration(self, name):
+        if name in self.children:
+            if isinstance(self.children[name], AggregateTreeNode):
+                return self.children[name].get_duration()
+            else:
+                return self.children[name]
+        else:
+            return datetime.timedelta(0)
+
+    def get_duration(self):
+        duration = datetime.timedelta(0)
+        for name in self.children.keys():
+            if isinstance(self.children[name], AggregateTreeNode):
+                duration += self.children[name].get_duration()
+            else:
+                duration += self.children[name]
+        return duration
+
+    def simplify(self):
+        # Merge "a b c" with "a b d"
+        while len(self.children) == 1:
+            prefix = self.children.keys()[0]
+            if not isinstance(self.children[prefix], AggregateTreeNode):
+                break
+            subtree = self.children[prefix]
+            self.children = {}
+            for name in subtree.children.keys():
+                self.children[prefix + ' ' + name] = subtree.children[name]
+
+        # Merge "a b" with "a c"
+        for name in self.children.keys():
+            child = self.children[name]
+            if isinstance(child, AggregateTreeNode):
+                child.simplify()
+                if len(child.children) == 1:
+                    del self.children[name]
+                    name2 = child.children.keys()[0]
+                    child = child.children[name2]
+                    self.children[name + ' ' + name2] = child
+
+    def display(self, indent_level=0):
         sorted_names = sorted(
-                self.total_time, key=lambda x: self.total_time[x], reverse=True)
+                self.children,
+                key=lambda x: self.get_child_duration(x),
+                reverse=True)
         for name in sorted_names:
-            self._print_aggregated_interval(
-                    name, self.total_time[name], self.is_assumed[name])
+            self._print_aggregated_interval(name, indent_level)
 
-    def _print_aggregated_interval(self, name, total_time, is_assumed):
+    def _print_aggregated_interval(self, name, indent_level):
+        duration = self.get_child_duration(name)
         is_break = WorkInterval.name_is_break(name)
-        if is_assumed:
-            name += " (assumed)"
-        print "   %s%-6s%s  %s%s%s" % (
+        is_assumed = (name == "(assumed)")
+        indent = ""
+        for i in range(indent_level): indent += "     "
+        print "   %s%s%-6s%s  %s%s%s" % (
+                indent,
                 get_duration_color(is_break, is_assumed),
-                duration_to_string(total_time),
+                duration_to_string(duration),
                 Attributes.reset,
                 get_name_color(is_break, is_assumed),
                 name,
                 Attributes.reset)
+        if isinstance(self.children[name], AggregateTreeNode):
+            self.children[name].display(indent_level + 1)
+
+
+class SessionAggregateDisplay(SessionDisplay):
+    def aggregation_begin(self):
+        self.tree = AggregateTreeNode()
+
+    def aggregation_add_session(self, session):
+        for interval in session.intervals():
+            self.tree.add_interval(
+                    interval.name().split(),
+                    interval.end() - interval.start(),
+                    interval.is_assumed())
+
+    def aggregation_end(self):
+        self.tree.simplify()
+        self.tree.display()
 
 
 class SessionAggregateDayDisplay(SessionAggregateDisplay):
