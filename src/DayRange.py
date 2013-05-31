@@ -75,6 +75,9 @@ class DayRange:
      * YYYY-Www
      * Ww, Www
 
+    Complete months:
+     * YYYY-MM
+
     Range formats:
      * <first>..<last>
     '''
@@ -199,6 +202,21 @@ class DayRange:
         today = datetime.date.today()
         start = today - datetime.timedelta(today.weekday() + 7 * int(groups[0]))
         self.set_range(start, start + datetime.timedelta(6))
+
+    @patterns.register(
+            r'^([12][0-9]{3})-(0?[1-9]|1[012])$')
+    def _pattern_yyyy_mm(self, groups):
+        year = int(groups[0])
+        month = int(groups[1])
+        next_month = (month % 12) + 1
+        if next_month == 1:
+            next_months_year = year + 1
+        else:
+            next_months_year = year
+        start = datetime.date(year, month, 1)
+        end = datetime.date(next_months_year, next_month, 1) \
+                - datetime.timedelta(1)
+        self.set_range(start, end)
 
     @patterns.register(r'^([^.]*)\.\.([^.]*)$')
     def _pattern_first_last(self, groups):
