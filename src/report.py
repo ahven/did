@@ -268,6 +268,8 @@ class SessionAggregateRangeDisplay(SessionAggregateDayDisplay):
     def print_footer(self):
         self.aggregation_end()
         SessionDisplay.print_footer(self)
+        if 1 == len(self.sessions):
+            SessionDisplay.print_session_footer(self, self.sessions[0])
 
     def print_session_intervals(self, session):
         self.aggregation_add_session(session)
