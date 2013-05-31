@@ -24,6 +24,7 @@ Fifth Floor, Boston, MA  02110-1301  USA
 import datetime
 import errno
 import os
+import re
 import subprocess
 import sys
 from WorkLog import WorkLog
@@ -34,6 +35,21 @@ from robfile import JobListLoader, JobListWriter
 from optparse import OptionParser
 from DayRange import DayRange
 
+def forward_slash_unescape(escaped):
+    unescaped = ''
+    i = 0
+    while i < len(escaped):
+        if escaped[i] == '\\' and i + 1 < len(escaped):
+            if escaped[i + 1] != '/':
+                # copy the backslash
+                unescaped += escaped[i]
+            # copy the following character
+            i += 1
+            unescaped += escaped[i]
+        else:
+            unescaped += escaped[i]
+        i += 1
+    return unescaped
 
 class DidApplication:
 
@@ -56,6 +72,9 @@ class DidApplication:
             if self.worklog.end().date() == datetime.date.today():
                 self.worklog.append_assumed_interval(datetime.datetime.now())
 
+        if self.options.categorized_report:
+            self.apply_categorization()
+
         self.worklog.compute_stats(WorkStatsFactory("PL"))
 
         if self.options.aggregate_range:
@@ -67,6 +86,27 @@ class DidApplication:
 
         session_display.display(self.worklog, DayRange(self.options.range))
 
+    def apply_categorization(self):
+        filename = self.get_config_dir() + "/categorization"
+        rx = re.compile("^s/((?:[^\\\\/]|\\\\.)+)/((?:[^\\\\/]|\\\\.)*)/\s*$")
+        try:
+            f = open(filename, "r")
+            for line in f:
+                if re.match("^\s*(#|$)", line):
+                    continue
+                m = rx.match(line)
+                if not m:
+                    print "Invalid line in categorization file \"%s\": %s" \
+                            % (filename, line)
+                    sys.exit(1)
+                pattern = forward_slash_unescape(m.group(1))
+                subst = forward_slash_unescape(m.group(2))
+                cat_rx = re.compile(pattern)
+                self.worklog.map_names(lambda x: cat_rx.sub(subst, x))
+
+        except IOError as err:
+            print "Error opening/reading from file '{0}': {1}".format(
+                    err.filename, err.strerror)
 
     def parse_options(self):
         parser = OptionParser(usage="%prog [options] [CURRENT-TASK]")
@@ -92,6 +132,10 @@ class DidApplication:
                           action="store_true",
                           dest="aggregate_range",
                           help="display jobs aggregated for the complete range")
+        parser.add_option("-c", "--categorized",
+                          action="store_true",
+                          dest="categorized_report",
+                          help="apply categorizing regexes to job names")
         (options, args) = parser.parse_args()
         self.options = options
         self.args = args

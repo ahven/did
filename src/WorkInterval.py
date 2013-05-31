@@ -50,6 +50,9 @@ class WorkInterval(object):
     def name(self):
         return self.name_
 
+    def set_name(self, name):
+        self.name_ = name
+
     @staticmethod
     def name_is_break(name):
         # Break names start with a "." or contain "**"

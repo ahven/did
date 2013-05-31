@@ -84,3 +84,7 @@ class WorkSession(object):
 
     def total_overtime(self):
         return self.total_overtime_
+
+    def map_names(self, func):
+        for interval in self.intervals_:
+            interval.set_name(func(interval.name()))
