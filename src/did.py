@@ -78,9 +78,11 @@ class DidApplication:
         self.worklog.compute_stats(WorkStatsFactory("PL"))
 
         if self.options.aggregate_range:
-            session_display = SessionAggregateRangeDisplay()
+            session_display = SessionAggregateRangeDisplay(
+                    self.options.percentage)
         elif self.options.aggregate_day:
-            session_display = SessionAggregateDayDisplay()
+            session_display = SessionAggregateDayDisplay(
+                    self.options.percentage)
         else:
             session_display = SessionChronologicalDisplay()
 
@@ -136,6 +138,10 @@ class DidApplication:
                           action="store_true",
                           dest="categorized_report",
                           help="apply categorizing regexes to job names")
+        parser.add_option("-p", "--percentage",
+                          action="store_true",
+                          dest="percentage",
+                          help="print times as percentage of total work time")
         (options, args) = parser.parse_args()
         self.options = options
         self.args = args

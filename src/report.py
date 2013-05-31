@@ -64,6 +64,12 @@ def get_duration_color(is_break, is_assumed):
 
 class SessionDisplay:
 
+    def total_work_time(self):
+        work_time = datetime.timedelta(0)
+        for session in self.sessions:
+            work_time += session.stats().time_worked()
+        return work_time
+
     def display(self, worklog, day_range):
         self.sessions = []
         self.print_header()
@@ -211,16 +217,22 @@ class AggregateTreeNode:
                     child = child.children[name2]
                     self.children[name + ' ' + name2] = child
 
-    def display(self, indent_level=0):
+    def display(self, total_work_time, indent_level=0):
         sorted_names = sorted(
                 self.children,
                 key=lambda x: self.get_child_duration(x),
                 reverse=True)
         for name in sorted_names:
-            self._print_aggregated_interval(name, indent_level)
+            self._print_aggregated_interval(name, indent_level,
+                    total_work_time)
 
-    def _print_aggregated_interval(self, name, indent_level):
+    def _print_aggregated_interval(self, name, indent_level, total_work_time):
         duration = self.get_child_duration(name)
+        if total_work_time.total_seconds() > 0:
+            duration_str = "%.2f%%" % (100.0 * duration.total_seconds()
+                    / total_work_time.total_seconds())
+        else:
+            duration_str = duration_to_string(duration)
         is_break = WorkInterval.name_is_break(name)
         is_assumed = (name == "(assumed)")
         indent = ""
@@ -228,16 +240,19 @@ class AggregateTreeNode:
         print "   %s%s%-6s%s  %s%s%s" % (
                 indent,
                 get_duration_color(is_break, is_assumed),
-                duration_to_string(duration),
+                duration_str,
                 Attributes.reset,
                 get_name_color(is_break, is_assumed),
                 name,
                 Attributes.reset)
         if isinstance(self.children[name], AggregateTreeNode):
-            self.children[name].display(indent_level + 1)
+            self.children[name].display(total_work_time, indent_level + 1)
 
 
 class SessionAggregateDisplay(SessionDisplay):
+    def __init__(self, percentage):
+        self.percentage = percentage
+
     def aggregation_begin(self):
         self.tree = AggregateTreeNode()
 
@@ -250,10 +265,16 @@ class SessionAggregateDisplay(SessionDisplay):
 
     def aggregation_end(self):
         self.tree.simplify()
-        self.tree.display()
+        if self.percentage:
+            self.tree.display(self.total_work_time())
+        else:
+            self.tree.display(datetime.timedelta(0))
 
 
 class SessionAggregateDayDisplay(SessionAggregateDisplay):
+    def __init__(self, percentage):
+        SessionAggregateDisplay.__init__(self, percentage)
+
     def print_session_intervals(self, session):
         self.aggregation_begin()
         self.aggregation_add_session(session)
@@ -261,6 +282,8 @@ class SessionAggregateDayDisplay(SessionAggregateDisplay):
 
 
 class SessionAggregateRangeDisplay(SessionAggregateDayDisplay):
+    def __init__(self, percentage):
+        SessionAggregateDayDisplay.__init__(self, percentage)
 
     def print_header(self):
         self.aggregation_begin()
