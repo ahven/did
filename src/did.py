@@ -30,7 +30,7 @@ import sys
 from WorkLog import WorkLog
 from WorkStatsFactory import WorkStatsFactory
 from report import SessionChronologicalDisplay, SessionAggregateDayDisplay, \
-        SessionAggregateRangeDisplay
+        SessionAggregateRangeDisplay, ReportTimePercent
 from robfile import JobListLoader, JobListWriter
 from optparse import OptionParser
 from DayRange import DayRange
@@ -78,14 +78,14 @@ class DidApplication:
         self.worklog.compute_stats(WorkStatsFactory("PL"))
 
         if self.options.aggregate_range:
-            session_display = SessionAggregateRangeDisplay(
-                    self.options.percentage)
+            session_display = SessionAggregateRangeDisplay()
         elif self.options.aggregate_day:
-            session_display = SessionAggregateDayDisplay(
-                    self.options.percentage)
+            session_display = SessionAggregateDayDisplay()
         else:
             session_display = SessionChronologicalDisplay()
 
+        if self.options.percentage and (self.options.aggregate_range or self.options.aggregate_day):
+            session_display.set_unit(ReportTimePercent())
         session_display.display(self.worklog, DayRange(self.options.range))
 
     def apply_categorization(self):

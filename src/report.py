@@ -22,23 +22,33 @@ from console_codes import Foreground, Attributes
 import datetime
 from WorkInterval import WorkInterval
 
+class ReportTimeUnit:
+    def set_total_work_time(self, total_work_time):
+        self.total_work_time = total_work_time
 
-def duration_to_string(diff):
-    if diff is None or diff is False:
-        return ''
-    total_seconds = diff.total_seconds()
-    time = ''
-    if diff.total_seconds() < 0:
-        time = '-'
-        total_seconds = -total_seconds
+class ReportTimePercent(ReportTimeUnit):
 
-    hours = total_seconds / 3600
-    minutes = (total_seconds / 60) % 60
+    def to_string(self, diff):
+        return "%.2f%%" % (100.0 * diff.total_seconds()
+                / self.total_work_time.total_seconds())
 
-    if 0 < hours:
-        time += "%dh" % hours
-    time += "%dm" % minutes
-    return time
+class ReportTimeHoursMinutes(ReportTimeUnit):
+    def to_string(self, diff):
+        if diff is None or diff is False:
+            return ''
+        total_seconds = diff.total_seconds()
+        time = ''
+        if diff.total_seconds() < 0:
+            time = '-'
+            total_seconds = -total_seconds
+
+        hours = total_seconds / 3600
+        minutes = (total_seconds / 60) % 60
+
+        if 0 < hours:
+            time += "%dh" % hours
+        time += "%dm" % minutes
+        return time
 
 def time_as_string(time):
     if time:
@@ -63,6 +73,13 @@ def get_duration_color(is_break, is_assumed):
         return Foreground.magenta + Attributes.bold
 
 class SessionDisplay:
+
+    def __init__(self):
+        self.stats_unit = ReportTimeHoursMinutes()
+        self.job_unit = ReportTimeHoursMinutes()
+
+    def set_unit(self, unit):
+        self.job_unit = unit
 
     def total_work_time(self):
         work_time = datetime.timedelta(0)
@@ -93,9 +110,9 @@ class SessionDisplay:
                 overtime += session.stats().overhours();
             print
             print "Overall:  Worked %-6s   Slacked %-6s   Overtime %-6s" % (
-                    duration_to_string(work_time),
-                    duration_to_string(break_time),
-                    duration_to_string(overtime))
+                    self.stats_unit.to_string(work_time),
+                    self.stats_unit.to_string(break_time),
+                    self.stats_unit.to_string(overtime))
 
     def print_session(self, session):
         self.print_session_header(session)
@@ -115,10 +132,10 @@ class SessionDisplay:
         overtime = session.stats().overhours();
 
         print "  Worked %-6s   Slacked %-6s   Overtime %-6s (running total %s)" % (
-                    duration_to_string(work_time),
-                    duration_to_string(break_time),
-                    duration_to_string(overtime),
-                    duration_to_string(session.total_overtime()))
+                    self.stats_unit.to_string(work_time),
+                    self.stats_unit.to_string(break_time),
+                    self.stats_unit.to_string(overtime),
+                    self.stats_unit.to_string(session.total_overtime()))
 
 class SessionChronologicalDisplay(SessionDisplay):
     def print_session_intervals(self, session):
@@ -141,7 +158,7 @@ class SessionChronologicalDisplay(SessionDisplay):
                 get_name_color(interval.is_break(), interval.is_assumed()),
                 name,
                 get_duration_color(interval.is_break(), interval.is_assumed()),
-                duration_to_string(interval.end() - interval.start()))
+                self.job_unit.to_string(interval.end() - interval.start()))
 
     def print_log_line(
             self, start, end, name_color, name, duration_color, duration):
@@ -217,22 +234,17 @@ class AggregateTreeNode:
                     child = child.children[name2]
                     self.children[name + ' ' + name2] = child
 
-    def display(self, total_work_time, indent_level=0):
+    def display(self, unit, indent_level=0):
         sorted_names = sorted(
                 self.children,
                 key=lambda x: self.get_child_duration(x),
                 reverse=True)
         for name in sorted_names:
-            self._print_aggregated_interval(name, indent_level,
-                    total_work_time)
+            self._print_aggregated_interval(name, indent_level, unit)
 
-    def _print_aggregated_interval(self, name, indent_level, total_work_time):
+    def _print_aggregated_interval(self, name, indent_level, unit):
         duration = self.get_child_duration(name)
-        if total_work_time.total_seconds() > 0:
-            duration_str = "%.2f%%" % (100.0 * duration.total_seconds()
-                    / total_work_time.total_seconds())
-        else:
-            duration_str = duration_to_string(duration)
+        duration_str = unit.to_string(duration)
         is_break = WorkInterval.name_is_break(name)
         is_assumed = (name == "(assumed)")
         indent = ""
@@ -246,12 +258,12 @@ class AggregateTreeNode:
                 name,
                 Attributes.reset)
         if isinstance(self.children[name], AggregateTreeNode):
-            self.children[name].display(total_work_time, indent_level + 1)
+            self.children[name].display(unit, indent_level + 1)
 
 
 class SessionAggregateDisplay(SessionDisplay):
-    def __init__(self, percentage):
-        self.percentage = percentage
+    def __init__(self):
+        SessionDisplay.__init__(self)
 
     def aggregation_begin(self):
         self.tree = AggregateTreeNode()
@@ -265,15 +277,13 @@ class SessionAggregateDisplay(SessionDisplay):
 
     def aggregation_end(self):
         self.tree.simplify()
-        if self.percentage:
-            self.tree.display(self.total_work_time())
-        else:
-            self.tree.display(datetime.timedelta(0))
+        self.job_unit.set_total_work_time(self.total_work_time())
+        self.tree.display(self.job_unit)
 
 
 class SessionAggregateDayDisplay(SessionAggregateDisplay):
-    def __init__(self, percentage):
-        SessionAggregateDisplay.__init__(self, percentage)
+    def __init__(self):
+        SessionAggregateDisplay.__init__(self)
 
     def print_session_intervals(self, session):
         self.aggregation_begin()
@@ -282,8 +292,8 @@ class SessionAggregateDayDisplay(SessionAggregateDisplay):
 
 
 class SessionAggregateRangeDisplay(SessionAggregateDayDisplay):
-    def __init__(self, percentage):
-        SessionAggregateDayDisplay.__init__(self, percentage)
+    def __init__(self):
+        SessionAggregateDayDisplay.__init__(self)
 
     def print_header(self):
         self.aggregation_begin()
