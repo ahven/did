@@ -77,14 +77,14 @@ class DidApplication:
 
         self.worklog.compute_stats(WorkStatsFactory("PL"))
 
-        day_range = DayRange(self.options.range)
-
         if self.options.aggregate_range:
-            session_display = AggregateRangeDisplay(self.worklog, day_range)
+            cls = AggregateRangeDisplay
         elif self.options.aggregate_day:
-            session_display = AggregateSessionDisplay(self.worklog, day_range)
+            cls = AggregateSessionDisplay
         else:
-            session_display = ChronologicalSessionDisplay(self.worklog, day_range)
+            cls = ChronologicalSessionDisplay
+
+        session_display = cls(self.worklog, DayRange(self.options.range))
 
         if self.options.percentage and (self.options.aggregate_range or self.options.aggregate_day):
             session_display.set_unit(ReportTimePercent())
