@@ -76,9 +76,16 @@ class SessionDisplay:
 
     def __init__(self, worklog, day_range):
         self.day_range = day_range
-        self.worklog = worklog
         self.stats_unit = ReportTimeHoursMinutes()
         self.job_unit = ReportTimeHoursMinutes()
+
+        self.sessions = []
+        for session in worklog.sessions():
+            if self.day_range.contains(session.start().date()):
+                self.append_session(session)
+
+    def append_session(self, session):
+        self.sessions.append(session)
 
     def set_unit(self, unit):
         self.job_unit = unit
@@ -98,11 +105,8 @@ class SessionDisplay:
         pass
 
     def print_content(self):
-        self.sessions = []
-        for session in self.worklog.sessions():
-            if self.day_range.contains(session.start().date()):
-                self.sessions.append(session)
-                self.print_session(session)
+        for session in self.sessions:
+            self.print_session(session)
 
     def print_footer(self):
         if len(self.sessions) > 1:
