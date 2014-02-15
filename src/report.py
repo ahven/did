@@ -72,29 +72,25 @@ def get_duration_color(is_break, is_assumed):
     else:
         return Foreground.magenta + Attributes.bold
 
-class SessionDisplay:
-
+class Display:
     def __init__(self, worklog, day_range):
         self.day_range = day_range
         self.stats_unit = ReportTimeHoursMinutes()
         self.job_unit = ReportTimeHoursMinutes()
-
-        self.sessions = []
+        self.total_work_time = datetime.timedelta(0)
+        self.total_break_time = datetime.timedelta(0)
+        self.total_overtime = datetime.timedelta(0)
         for session in worklog.sessions():
             if self.day_range.contains(session.start().date()):
                 self.append_session(session)
-
-    def append_session(self, session):
-        self.sessions.append(session)
+                self.total_work_time += session.stats().time_worked()
+                self.total_break_time += session.stats().time_slacked()
+                self.total_overtime += session.stats().overhours();
+        self.job_unit.set_total_work_time(self.total_work_time)
 
     def set_unit(self, unit):
         self.job_unit = unit
-
-    def total_work_time(self):
-        work_time = datetime.timedelta(0)
-        for session in self.sessions:
-            work_time += session.stats().time_worked()
-        return work_time
+        self.job_unit.set_total_work_time(self.total_work_time)
 
     def display(self):
         self.print_header()
@@ -104,28 +100,28 @@ class SessionDisplay:
     def print_header(self):
         pass
 
+    def print_footer(self):
+        print
+        print "Overall:  Worked %-6s   Slacked %-6s   Overtime %-6s" % (
+                self.stats_unit.to_string(self.total_work_time),
+                self.stats_unit.to_string(self.total_break_time),
+                self.stats_unit.to_string(self.total_overtime))
+
+class SessionDisplay(Display):
+    def __init__(self, worklog, day_range):
+        self.sessions = []
+        Display.__init__(self, worklog, day_range)
+
+    def append_session(self, session):
+        self.sessions.append(session)
+
     def print_content(self):
         for session in self.sessions:
             self.print_session(session)
 
-    def print_footer(self):
-        if len(self.sessions) > 1:
-            work_time = datetime.timedelta(0)
-            break_time = datetime.timedelta(0)
-            overtime = datetime.timedelta(0)
-            for session in self.sessions:
-                work_time += session.stats().time_worked()
-                break_time += session.stats().time_slacked()
-                overtime += session.stats().overhours();
-            print
-            print "Overall:  Worked %-6s   Slacked %-6s   Overtime %-6s" % (
-                    self.stats_unit.to_string(work_time),
-                    self.stats_unit.to_string(break_time),
-                    self.stats_unit.to_string(overtime))
-
     def print_session(self, session):
         self.print_session_header(session)
-        self.print_session_intervals(session)
+        self.print_session_content(session)
         self.print_session_footer(session)
 
     def print_session_header(self, session):
@@ -146,11 +142,11 @@ class SessionDisplay:
                     self.stats_unit.to_string(overtime),
                     self.stats_unit.to_string(session.total_overtime()))
 
-class SessionChronologicalDisplay(SessionDisplay):
+class ChronologicalSessionDisplay(SessionDisplay):
     def __init__(self, worklog, day_range):
         SessionDisplay.__init__(self, worklog, day_range)
 
-    def print_session_intervals(self, session):
+    def print_session_content(self, session):
         if len(session.intervals()) == 0:
             self.print_log_line(
                     "", time_as_string(session.start()),
@@ -272,55 +268,33 @@ class AggregateTreeNode:
         if isinstance(self.children[name], AggregateTreeNode):
             self.children[name].display(unit, indent_level + 1)
 
-
-class SessionAggregateDisplay(SessionDisplay):
-    def __init__(self, worklog, day_range):
-        SessionDisplay.__init__(self, worklog, day_range)
-
-    def aggregation_begin(self):
-        self.tree = AggregateTreeNode()
-
-    def aggregation_add_session(self, session):
+    def add_session(self, session):
         for interval in session.intervals():
-            self.tree.add_interval(
+            self.add_interval(
                     interval.name().split(),
                     interval.end() - interval.start(),
                     interval.is_assumed())
 
-    def aggregation_end(self):
+
+class AggregateSessionDisplay(SessionDisplay):
+    def __init__(self, worklog, day_range):
+        SessionDisplay.__init__(self, worklog, day_range)
+
+    def print_session_content(self, session):
+        self.tree = AggregateTreeNode()
+        self.tree.add_session(session)
         self.tree.simplify()
-        self.job_unit.set_total_work_time(self.total_work_time())
         self.tree.display(self.job_unit)
 
 
-class SessionAggregateDayDisplay(SessionAggregateDisplay):
+class AggregateRangeDisplay(Display):
     def __init__(self, worklog, day_range):
-        SessionAggregateDisplay.__init__(self, worklog, day_range)
+        self.tree = AggregateTreeNode()
+        Display.__init__(self, worklog, day_range)
 
-    def print_session_intervals(self, session):
-        self.aggregation_begin()
-        self.aggregation_add_session(session)
-        self.aggregation_end()
+    def append_session(self, session):
+        self.tree.add_session(session)
 
-
-class SessionAggregateRangeDisplay(SessionAggregateDayDisplay):
-    def __init__(self, worklog, day_range):
-        SessionAggregateDayDisplay.__init__(self, worklog, day_range)
-
-    def print_header(self):
-        self.aggregation_begin()
-
-    def print_footer(self):
-        self.aggregation_end()
-        SessionDisplay.print_footer(self)
-        if 1 == len(self.sessions):
-            SessionDisplay.print_session_footer(self, self.sessions[0])
-
-    def print_session_intervals(self, session):
-        self.aggregation_add_session(session)
-
-    def print_session_header(self, session):
-        pass
-
-    def print_session_footer(self, session):
-        pass
+    def print_content(self):
+        self.tree.simplify()
+        self.tree.display(self.job_unit)

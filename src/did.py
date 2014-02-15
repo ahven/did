@@ -29,8 +29,8 @@ import subprocess
 import sys
 from WorkLog import WorkLog
 from WorkStatsFactory import WorkStatsFactory
-from report import SessionChronologicalDisplay, SessionAggregateDayDisplay, \
-        SessionAggregateRangeDisplay, ReportTimePercent
+from report import ChronologicalSessionDisplay, AggregateSessionDisplay, \
+        AggregateRangeDisplay, ReportTimePercent
 from robfile import JobListLoader, JobListWriter
 from optparse import OptionParser
 from DayRange import DayRange
@@ -80,11 +80,11 @@ class DidApplication:
         day_range = DayRange(self.options.range)
 
         if self.options.aggregate_range:
-            session_display = SessionAggregateRangeDisplay(self.worklog, day_range)
+            session_display = AggregateRangeDisplay(self.worklog, day_range)
         elif self.options.aggregate_day:
-            session_display = SessionAggregateDayDisplay(self.worklog, day_range)
+            session_display = AggregateSessionDisplay(self.worklog, day_range)
         else:
-            session_display = SessionChronologicalDisplay(self.worklog, day_range)
+            session_display = ChronologicalSessionDisplay(self.worklog, day_range)
 
         if self.options.percentage and (self.options.aggregate_range or self.options.aggregate_day):
             session_display.set_unit(ReportTimePercent())
