@@ -27,10 +27,12 @@ class ReportTimeUnit:
         self.total_work_time = total_work_time
 
 class ReportTimePercent(ReportTimeUnit):
-
     def to_string(self, diff):
-        return "%.2f%%" % (100.0 * diff.total_seconds()
-                / self.total_work_time.total_seconds())
+        denominator = self.total_work_time.total_seconds()
+        if denominator > 0:
+            return "%.2f%%" % (100.0 * diff.total_seconds() / denominator)
+        else:
+            return "NAN"
 
 class ReportTimeHoursMinutes(ReportTimeUnit):
     def to_string(self, diff):
@@ -120,6 +122,7 @@ class SessionDisplay(Display):
             self.print_session(session)
 
     def print_session(self, session):
+        self.job_unit.set_total_work_time(session.stats().time_worked())
         self.print_session_header(session)
         self.print_session_content(session)
         self.print_session_footer(session)
