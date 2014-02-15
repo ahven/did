@@ -74,7 +74,9 @@ def get_duration_color(is_break, is_assumed):
 
 class SessionDisplay:
 
-    def __init__(self):
+    def __init__(self, worklog, day_range):
+        self.day_range = day_range
+        self.worklog = worklog
         self.stats_unit = ReportTimeHoursMinutes()
         self.job_unit = ReportTimeHoursMinutes()
 
@@ -87,11 +89,11 @@ class SessionDisplay:
             work_time += session.stats().time_worked()
         return work_time
 
-    def display(self, worklog, day_range):
+    def display(self):
         self.sessions = []
         self.print_header()
-        for session in worklog.sessions():
-            if day_range.contains(session.start().date()):
+        for session in self.worklog.sessions():
+            if self.day_range.contains(session.start().date()):
                 self.sessions.append(session)
                 self.print_session(session)
         self.print_footer()
@@ -138,6 +140,9 @@ class SessionDisplay:
                     self.stats_unit.to_string(session.total_overtime()))
 
 class SessionChronologicalDisplay(SessionDisplay):
+    def __init__(self, worklog, day_range):
+        SessionDisplay.__init__(self, worklog, day_range)
+
     def print_session_intervals(self, session):
         if len(session.intervals()) == 0:
             self.print_log_line(
@@ -262,8 +267,8 @@ class AggregateTreeNode:
 
 
 class SessionAggregateDisplay(SessionDisplay):
-    def __init__(self):
-        SessionDisplay.__init__(self)
+    def __init__(self, worklog, day_range):
+        SessionDisplay.__init__(self, worklog, day_range)
 
     def aggregation_begin(self):
         self.tree = AggregateTreeNode()
@@ -282,8 +287,8 @@ class SessionAggregateDisplay(SessionDisplay):
 
 
 class SessionAggregateDayDisplay(SessionAggregateDisplay):
-    def __init__(self):
-        SessionAggregateDisplay.__init__(self)
+    def __init__(self, worklog, day_range):
+        SessionAggregateDisplay.__init__(self, worklog, day_range)
 
     def print_session_intervals(self, session):
         self.aggregation_begin()
@@ -292,8 +297,8 @@ class SessionAggregateDayDisplay(SessionAggregateDisplay):
 
 
 class SessionAggregateRangeDisplay(SessionAggregateDayDisplay):
-    def __init__(self):
-        SessionAggregateDayDisplay.__init__(self)
+    def __init__(self, worklog, day_range):
+        SessionAggregateDayDisplay.__init__(self, worklog, day_range)
 
     def print_header(self):
         self.aggregation_begin()

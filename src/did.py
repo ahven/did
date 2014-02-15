@@ -77,16 +77,18 @@ class DidApplication:
 
         self.worklog.compute_stats(WorkStatsFactory("PL"))
 
+        day_range = DayRange(self.options.range)
+
         if self.options.aggregate_range:
-            session_display = SessionAggregateRangeDisplay()
+            session_display = SessionAggregateRangeDisplay(self.worklog, day_range)
         elif self.options.aggregate_day:
-            session_display = SessionAggregateDayDisplay()
+            session_display = SessionAggregateDayDisplay(self.worklog, day_range)
         else:
-            session_display = SessionChronologicalDisplay()
+            session_display = SessionChronologicalDisplay(self.worklog, day_range)
 
         if self.options.percentage and (self.options.aggregate_range or self.options.aggregate_day):
             session_display.set_unit(ReportTimePercent())
-        session_display.display(self.worklog, DayRange(self.options.range))
+        session_display.display()
 
     def apply_categorization(self):
         filename = self.get_config_dir() + "/categorization"
