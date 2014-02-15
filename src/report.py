@@ -90,16 +90,19 @@ class SessionDisplay:
         return work_time
 
     def display(self):
-        self.sessions = []
         self.print_header()
-        for session in self.worklog.sessions():
-            if self.day_range.contains(session.start().date()):
-                self.sessions.append(session)
-                self.print_session(session)
+        self.print_content()
         self.print_footer()
 
     def print_header(self):
         pass
+
+    def print_content(self):
+        self.sessions = []
+        for session in self.worklog.sessions():
+            if self.day_range.contains(session.start().date()):
+                self.sessions.append(session)
+                self.print_session(session)
 
     def print_footer(self):
         if len(self.sessions) > 1:
