@@ -31,7 +31,7 @@ from WorkLog import WorkLog
 from WorkStatsFactory import WorkStatsFactory
 from report import ChronologicalSessionDisplay, AggregateSessionDisplay, \
         AggregateRangeDisplay, ReportTimePercent
-from robfile import JobListLoader, JobListWriter
+from robfile import job_reader, JobListWriter
 from optparse import OptionParser
 from DayRange import DayRange
 
@@ -63,8 +63,8 @@ class DidApplication:
             self.create_file(self.options.logfile)
 
         self.worklog = WorkLog()
-        loader = JobListLoader(self.worklog)
-        loader.load(self.options.logfile)
+        for dt, text in job_reader(self.options.logfile):
+            self.worklog.append_log_event(dt, text)
 
         if 0 < len(self.args):
             self.append_event(" ".join(self.args))

@@ -22,37 +22,38 @@ import datetime
 import re
 from WorkLog import NonChronologicalOrderError
 
-class JobListLoader:
-    def __init__(self, worklog):
-        self.worklog = worklog
+def job_reader(path):
+    """
+    Generator reading lines from a work log file.
 
-    def load(self, path):
-        pattern = "(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2})(?::(\d{2}))?: (.+)$"
-        rx = re.compile(pattern)
-        try:
-            f = open(path, "r")
-            for line in f:
-                m = rx.match(line)
-                if m:
-                    parts = list(m.groups())
-                    text = parts.pop()
-                    for i in xrange(len(parts)):
-                        if parts[i] is None:
-                            parts[i] = 0
-                        else:
-                            parts[i] = int(parts[i])
-                    year, month, day, hour, minute, second = parts
-                    dt = datetime.datetime(
-                                        year, month, day, hour, minute, second)
-                    self.worklog.append_log_event(dt, text)
-                elif not re.match("#|\s*$", line):
-                    raise Exception("Invalid line", line)
-        except NonChronologicalOrderError as err:
-            print "Error: Non-chronological entries: appending", \
-                    err.appended_datetime, "after", err.last_datetime
-        except IOError as err:
-            print "Error opening/reading from file '{0}': {1}".format(
-                                                    err.filename, err.strerror)
+    In each iteration the generator returns a (datetime, text) tuple.
+    """
+    pattern = "(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2})(?::(\d{2}))?: (.+)$"
+    rx = re.compile(pattern)
+    try:
+        f = open(path, "r")
+        for line in f:
+            m = rx.match(line)
+            if m:
+                parts = list(m.groups())
+                text = parts.pop()
+                for i in xrange(len(parts)):
+                    if parts[i] is None:
+                        parts[i] = 0
+                    else:
+                        parts[i] = int(parts[i])
+                year, month, day, hour, minute, second = parts
+                dt = datetime.datetime(
+                        year, month, day, hour, minute, second)
+                yield dt, text
+            elif not re.match("#|\s*$", line):
+                raise Exception("Invalid line", line)
+    except NonChronologicalOrderError as err:
+        print "Error: Non-chronological entries: appending", \
+                err.appended_datetime, "after", err.last_datetime
+    except IOError as err:
+        print "Error opening/reading from file '{0}': {1}".format(
+                err.filename, err.strerror)
 
 class JobListWriter:
     def __init__(self, filename):
