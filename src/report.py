@@ -224,16 +224,6 @@ class AggregateTreeNode:
         return duration
 
     def simplify(self):
-        # Merge "a b c" with "a b d"
-        while len(self.children) == 1:
-            prefix = self.children.keys()[0]
-            if not isinstance(self.children[prefix], AggregateTreeNode):
-                break
-            subtree = self.children[prefix]
-            self.children = {}
-            for name in subtree.children.keys():
-                self.children[prefix + ' ' + name] = subtree.children[name]
-
         # Merge "a b" with "a c"
         for name in self.children.keys():
             child = self.children[name]
@@ -242,8 +232,9 @@ class AggregateTreeNode:
                 if len(child.children) == 1:
                     del self.children[name]
                     name2 = child.children.keys()[0]
-                    child = child.children[name2]
-                    self.children[name + ' ' + name2] = child
+                    if name2 != '':
+                        name += ' ' + name2
+                    self.children[name] = child.children[name2]
 
     def display(self, unit, indent_level=0):
         sorted_names = sorted(
