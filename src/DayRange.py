@@ -78,6 +78,9 @@ class DayRange:
     Complete months:
      * YYYY-MM
 
+    Complete years:
+     * YYYY
+
     Range formats:
      * <first>..<last>
     '''
@@ -217,6 +220,12 @@ class DayRange:
         end = datetime.date(next_months_year, next_month, 1) \
                 - datetime.timedelta(1)
         self.set_range(start, end)
+
+    @patterns.register(r'^(2[0-9]{3})$')
+    def _pattern_yyyy(self, groups):
+        year = int(groups[0])
+        self.set_range(datetime.date(year, 1, 1),
+                       datetime.date(year, 12, 31))
 
     @patterns.register(r'^([^.]*)\.\.([^.]*)$')
     def _pattern_first_last(self, groups):
