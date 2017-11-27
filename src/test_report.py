@@ -35,7 +35,7 @@ class TestNameSimplification(unittest.TestCase):
             self.assertTrue(isinstance(got, datetime.timedelta))
         else:
             self.assertSetEqual(set(got.children.keys()), set(expected.keys()))
-            for key in got.children.keys():
+            for key in list(got.children.keys()):
                 self.assertTreeEqual(got.children[key], expected[key])
 
     def test_insert_1_1_level_item(self):

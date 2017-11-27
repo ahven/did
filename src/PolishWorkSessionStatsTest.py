@@ -94,8 +94,8 @@ class BasicSessionTest(unittest.TestCase):
         expected_worktime = datetime.timedelta(0, expected_work_seconds)
         expected_breaktime = datetime.timedelta(0, expected_break_seconds)
 
-        self.assertEquals(stats.time_worked(), expected_worktime)
-        self.assertEquals(stats.time_slacked(), expected_breaktime)
+        self.assertEqual(stats.time_worked(), expected_worktime)
+        self.assertEqual(stats.time_slacked(), expected_breaktime)
 
     def verify(self, intervals, expected_work_seconds, expected_break_seconds):
         self.verify_generic(intervals, expected_work_seconds, expected_break_seconds, True)

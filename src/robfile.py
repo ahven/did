@@ -37,7 +37,7 @@ def job_reader(path):
             if m:
                 parts = list(m.groups())
                 text = parts.pop()
-                for i in xrange(len(parts)):
+                for i in range(len(parts)):
                     if parts[i] is None:
                         parts[i] = 0
                     else:
@@ -49,11 +49,11 @@ def job_reader(path):
             elif not re.match("#|\s*$", line):
                 raise Exception("Invalid line", line)
     except NonChronologicalOrderError as err:
-        print "Error: Non-chronological entries: appending", \
-                err.appended_datetime, "after", err.last_datetime
+        print("Error: Non-chronological entries: appending", \
+                err.appended_datetime, "after", err.last_datetime)
     except IOError as err:
-        print "Error opening/reading from file '{0}': {1}".format(
-                err.filename, err.strerror)
+        print("Error opening/reading from file '{0}': {1}".format(
+                err.filename, err.strerror))
 
 class JobListWriter:
     def __init__(self, filename):
@@ -66,5 +66,5 @@ class JobListWriter:
                     (date.year, date.month, date.day,
                      date.hour, date.minute, date.second, name))
         except IOError as err:
-            print "Error opening/writing to file '{0}': {1}".format(
-                                                    err.filename, err.strerror)
+            print("Error opening/writing to file '{0}': {1}".format(
+                                                    err.filename, err.strerror))

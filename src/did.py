@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # -*- coding: utf-8 -*-
 """
 did - write what you just did, making a log
@@ -100,8 +100,8 @@ class DidApplication:
                     continue
                 m = rx.match(line)
                 if not m:
-                    print "Invalid line in categorization file \"%s\": %s" \
-                            % (filename, line)
+                    print("Invalid line in categorization file \"%s\": %s" \
+                            % (filename, line))
                     sys.exit(1)
                 pattern = forward_slash_unescape(m.group(1))
                 subst = forward_slash_unescape(m.group(2))
@@ -109,8 +109,8 @@ class DidApplication:
                 self.worklog.map_names(lambda x: cat_rx.sub(subst, x))
 
         except IOError as err:
-            print "Error opening/reading from file '{0}': {1}".format(
-                    err.filename, err.strerror)
+            print("Error opening/reading from file '{0}': {1}".format(
+                    err.filename, err.strerror))
 
     def parse_options(self):
         parser = OptionParser(usage="%prog [options] [CURRENT-TASK]")
@@ -150,9 +150,9 @@ class DidApplication:
 
     def open_editor(self):
         editors = []
-        if os.environ.has_key('VISUAL'):
+        if 'VISUAL' in os.environ:
             editors.append(os.environ['VISUAL'])
-        if os.environ.has_key('EDITOR'):
+        if 'EDITOR' in os.environ:
             editors.append(os.environ['EDITOR'])
         editors.extend(["/usr/bin/vim", "/usr/bin/nano", "/usr/bin/pico",
                         "/usr/bin/vi", "/usr/bin/mcedit"])

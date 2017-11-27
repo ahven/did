@@ -103,11 +103,11 @@ class Display:
         pass
 
     def print_footer(self):
-        print
-        print "Overall:  Worked %-6s   Slacked %-6s   Overtime %-6s" % (
+        print()
+        print("Overall:  Worked %-6s   Slacked %-6s   Overtime %-6s" % (
                 self.stats_unit.to_string(self.total_work_time),
                 self.stats_unit.to_string(self.total_break_time),
-                self.stats_unit.to_string(self.total_overtime))
+                self.stats_unit.to_string(self.total_overtime)))
 
 class SessionDisplay(Display):
     def __init__(self, worklog, day_range):
@@ -128,22 +128,22 @@ class SessionDisplay(Display):
         self.print_session_footer(session)
 
     def print_session_header(self, session):
-        print
-        print Foreground.green + str(session.start().date()),
+        print()
+        print(Foreground.green + str(session.start().date()), end=' ')
         if not session.is_workday():
-            print "  (Out of office)",
-        print Attributes.reset
+            print("  (Out of office)", end=' ')
+        print(Attributes.reset)
 
     def print_session_footer(self, session):
         work_time = session.stats().time_worked()
         break_time = session.stats().time_slacked()
         overtime = session.stats().overhours();
 
-        print "  Worked %-6s   Slacked %-6s   Overtime %-6s (running total %s)" % (
+        print("  Worked %-6s   Slacked %-6s   Overtime %-6s (running total %s)" % (
                     self.stats_unit.to_string(work_time),
                     self.stats_unit.to_string(break_time),
                     self.stats_unit.to_string(overtime),
-                    self.stats_unit.to_string(session.total_overtime()))
+                    self.stats_unit.to_string(session.total_overtime())))
 
 class ChronologicalSessionDisplay(SessionDisplay):
     def __init__(self, worklog, day_range):
@@ -173,7 +173,7 @@ class ChronologicalSessionDisplay(SessionDisplay):
 
     def print_log_line(
             self, start, end, name_color, name, duration_color, duration):
-        print "  %5s .. %5s  %s%-30s%s  %s%s%s" % (
+        print("  %5s .. %5s  %s%-30s%s  %s%s%s" % (
                 start,
                 end,
                 name_color,
@@ -181,7 +181,7 @@ class ChronologicalSessionDisplay(SessionDisplay):
                 Attributes.reset,
                 duration_color,
                 duration,
-                Attributes.reset)
+                Attributes.reset))
 
 
 class AggregateTreeNode:
@@ -216,7 +216,7 @@ class AggregateTreeNode:
 
     def get_duration(self):
         duration = datetime.timedelta(0)
-        for name in self.children.keys():
+        for name in list(self.children.keys()):
             if isinstance(self.children[name], AggregateTreeNode):
                 duration += self.children[name].get_duration()
             else:
@@ -225,13 +225,13 @@ class AggregateTreeNode:
 
     def simplify(self):
         # Merge "a b" with "a c"
-        for name in self.children.keys():
+        for name in list(self.children.keys()):
             child = self.children[name]
             if isinstance(child, AggregateTreeNode):
                 child.simplify()
                 if len(child.children) == 1:
                     del self.children[name]
-                    name2 = child.children.keys()[0]
+                    name2 = list(child.children.keys())[0]
                     if name2 != '':
                         name += ' ' + name2
                     self.children[name] = child.children[name2]
@@ -251,14 +251,14 @@ class AggregateTreeNode:
         is_assumed = (name == "(assumed)")
         indent = ""
         for i in range(indent_level): indent += "     "
-        print "   %s%s%-6s%s  %s%s%s" % (
+        print("   %s%s%-6s%s  %s%s%s" % (
                 indent,
                 get_duration_color(is_break, is_assumed),
                 duration_str,
                 Attributes.reset,
                 get_name_color(is_break, is_assumed),
                 name,
-                Attributes.reset)
+                Attributes.reset))
         if isinstance(self.children[name], AggregateTreeNode):
             self.children[name].display(unit, indent_level + 1)
 
