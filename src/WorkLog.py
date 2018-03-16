@@ -85,13 +85,6 @@ class WorkLog(object):
     def sessions(self):
         return self.sessions_
 
-    def overhours(self, stats_factory):
-        overhours = datetime.timedelta(0)
-        for session in self.sessions_:
-            stats = stats_factory.new_session_stats(session)
-            overhours += stats.overhours()
-        return overhours
-
     def last_break_interval(self):
         for session in reversed(self.sessions_):
             last_break = session.last_break_interval()
