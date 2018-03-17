@@ -23,6 +23,9 @@ import datetime
 from WorkInterval import WorkInterval
 
 class ReportTimeUnit:
+    def __init__(self, adjusted):
+        self.adjusted_string = '*' if adjusted else ''
+
     def set_total_work_time(self, total_work_time):
         self.total_work_time = total_work_time
 
@@ -30,7 +33,8 @@ class ReportTimePercent(ReportTimeUnit):
     def to_string(self, diff):
         denominator = self.total_work_time.total_seconds()
         if denominator > 0:
-            return "%.2f%%" % (100.0 * diff.total_seconds() / denominator)
+            return "%.2f%%%s" % (100.0 * diff.total_seconds() / denominator,
+                                 self.adjusted_string)
         else:
             return "NAN"
 
@@ -50,6 +54,7 @@ class ReportTimeHoursMinutes(ReportTimeUnit):
         if 0 < hours:
             time += "%dh" % hours
         time += "%dm" % minutes
+        time += self.adjusted_string
         return time
 
 def time_as_string(time):
@@ -79,8 +84,9 @@ class Display:
         self.worklog = worklog
         self.day_range = day_range
         self.adjusted = adjusted
-        self.stats_unit = ReportTimeHoursMinutes()
-        self.job_unit = ReportTimeHoursMinutes()
+        self.overall_stats_unit = ReportTimeHoursMinutes(True)
+        self.matched_stats_unit = ReportTimeHoursMinutes(self.adjusted)
+        self.job_unit = ReportTimeHoursMinutes(self.adjusted)
         self.total_work_time = datetime.timedelta(0)
         self.total_break_time = datetime.timedelta(0)
         self.total_overtime = datetime.timedelta(0)
@@ -112,12 +118,12 @@ class Display:
         print()
         if self.worklog.has_filter():
             print("Matched:  Work %-6s   Break %-6s" % (
-                    self.stats_unit.to_string(self.matched_work_time),
-                    self.stats_unit.to_string(self.matched_break_time)))
+                    self.matched_stats_unit.to_string(self.matched_work_time),
+                    self.matched_stats_unit.to_string(self.matched_break_time)))
         print("Overall:  Worktime %-6s   Slacktime %-6s   Overtime %-6s" % (
-                self.stats_unit.to_string(self.total_work_time),
-                self.stats_unit.to_string(self.total_break_time),
-                self.stats_unit.to_string(self.total_overtime)))
+                self.overall_stats_unit.to_string(self.total_work_time),
+                self.overall_stats_unit.to_string(self.total_break_time),
+                self.overall_stats_unit.to_string(self.total_overtime)))
 
 class SessionDisplay(Display):
     def __init__(self, worklog, day_range, adjusted):
@@ -149,8 +155,8 @@ class SessionDisplay(Display):
 
     def print_matched_jobs_footer(self, session):
         print("  Matched: Work %-6s   Break %-6s" % (
-                self.stats_unit.to_string(session.matched_work_time()),
-                self.stats_unit.to_string(session.matched_break_time())))
+                self.matched_stats_unit.to_string(session.matched_work_time(self.adjusted)),
+                self.matched_stats_unit.to_string(session.matched_break_time(self.adjusted))))
 
     def print_session_footer(self, session):
         work_time = session.stats().time_worked()
@@ -158,10 +164,10 @@ class SessionDisplay(Display):
         overtime = session.stats().overhours();
 
         print("  Worktime %-6s   Slacktime %-6s   Overtime %-6s (running total %s)" % (
-                    self.stats_unit.to_string(work_time),
-                    self.stats_unit.to_string(break_time),
-                    self.stats_unit.to_string(overtime),
-                    self.stats_unit.to_string(session.total_overtime())))
+                    self.overall_stats_unit.to_string(work_time),
+                    self.overall_stats_unit.to_string(break_time),
+                    self.overall_stats_unit.to_string(overtime),
+                    self.overall_stats_unit.to_string(session.total_overtime())))
 
 class ChronologicalSessionDisplay(SessionDisplay):
     def __init__(self, worklog, day_range, adjusted):
