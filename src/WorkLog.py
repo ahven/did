@@ -44,7 +44,8 @@ class NonChronologicalOrderError(Exception):
 
 class WorkLog(object):
     '''
-    classdocs
+    A WorkLog keeps all information throughout the whole history.
+    It consists of WorkSession's.
     '''
 
     def __init__(self):
@@ -52,19 +53,28 @@ class WorkLog(object):
         Constructor
         '''
         self.sessions_ = []
+        self.filter_regex = None
 
     def _check_chronology(self, datetime):
         end = self.end()
         if end != None and end > datetime:
             raise NonChronologicalOrderError(end, datetime)
 
+    def set_filter_regex(self, regex):
+        self.filter_regex = regex
+        for session in self.sessions_:
+            session.set_filter_regex(regex)
+
+    def has_filter(self):
+        return self.filter_regex is not None
+
     def append_log_event(self, datetime, text):
         self._check_chronology(datetime)
 
         if text == "arrive":
-            self.sessions_.append(WorkSession(datetime, True))
+            self.sessions_.append(WorkSession(datetime, True, self.filter_regex))
         elif text == "arrive ooo":
-            self.sessions_.append(WorkSession(datetime, False))
+            self.sessions_.append(WorkSession(datetime, False, self.filter_regex))
         else:
             if len(self.sessions_) == 0:
                 raise FirstJobNotArriveError()

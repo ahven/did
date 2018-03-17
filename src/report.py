@@ -76,18 +76,23 @@ def get_duration_color(is_break, is_assumed):
 
 class Display:
     def __init__(self, worklog, day_range):
+        self.worklog = worklog
         self.day_range = day_range
         self.stats_unit = ReportTimeHoursMinutes()
         self.job_unit = ReportTimeHoursMinutes()
         self.total_work_time = datetime.timedelta(0)
         self.total_break_time = datetime.timedelta(0)
         self.total_overtime = datetime.timedelta(0)
+        self.matched_work_time = datetime.timedelta(0)
+        self.matched_break_time = datetime.timedelta(0)
         for session in worklog.sessions():
             if self.day_range.contains(session.start().date()):
                 self.append_session(session)
                 self.total_work_time += session.stats().time_worked()
                 self.total_break_time += session.stats().time_slacked()
-                self.total_overtime += session.stats().overhours();
+                self.total_overtime += session.stats().overhours()
+                self.matched_work_time += session.matched_work_time()
+                self.matched_break_time += session.matched_break_time()
         self.job_unit.set_total_work_time(self.total_work_time)
 
     def set_unit(self, unit):
@@ -104,7 +109,11 @@ class Display:
 
     def print_footer(self):
         print()
-        print("Overall:  Worked %-6s   Slacked %-6s   Overtime %-6s" % (
+        if self.worklog.has_filter():
+            print("Matched:  Work %-6s   Break %-6s" % (
+                    self.stats_unit.to_string(self.matched_work_time),
+                    self.stats_unit.to_string(self.matched_break_time)))
+        print("Overall:  Worktime %-6s   Slacktime %-6s   Overtime %-6s" % (
                 self.stats_unit.to_string(self.total_work_time),
                 self.stats_unit.to_string(self.total_break_time),
                 self.stats_unit.to_string(self.total_overtime)))
@@ -122,10 +131,13 @@ class SessionDisplay(Display):
             self.print_session(session)
 
     def print_session(self, session):
-        self.job_unit.set_total_work_time(session.stats().time_worked())
-        self.print_session_header(session)
-        self.print_session_content(session)
-        self.print_session_footer(session)
+        if not session.has_filter() or session.has_matched_jobs():
+            self.job_unit.set_total_work_time(session.stats().time_worked())
+            self.print_session_header(session)
+            self.print_session_content(session)
+            if session.has_filter():
+                self.print_matched_jobs_footer(session)
+            self.print_session_footer(session)
 
     def print_session_header(self, session):
         print()
@@ -134,12 +146,17 @@ class SessionDisplay(Display):
             print("  (Out of office)", end=' ')
         print(Attributes.reset)
 
+    def print_matched_jobs_footer(self, session):
+        print("  Matched: Work %-6s   Break %-6s" % (
+                self.stats_unit.to_string(session.matched_work_time()),
+                self.stats_unit.to_string(session.matched_break_time())))
+
     def print_session_footer(self, session):
         work_time = session.stats().time_worked()
         break_time = session.stats().time_slacked()
         overtime = session.stats().overhours();
 
-        print("  Worked %-6s   Slacked %-6s   Overtime %-6s (running total %s)" % (
+        print("  Worktime %-6s   Slacktime %-6s   Overtime %-6s (running total %s)" % (
                     self.stats_unit.to_string(work_time),
                     self.stats_unit.to_string(break_time),
                     self.stats_unit.to_string(overtime),
@@ -156,7 +173,8 @@ class ChronologicalSessionDisplay(SessionDisplay):
                     Foreground.red, "arrive", "", "")
 
         for interval in session.intervals():
-            self._print_interval(interval)
+            if interval.is_selected():
+                self._print_interval(interval)
 
     def _print_interval(self, interval):
         name = interval.name()
@@ -264,10 +282,11 @@ class AggregateTreeNode:
 
     def add_session(self, session):
         for interval in session.intervals():
-            self.add_interval(
-                    interval.name().split(),
-                    interval.end() - interval.start(),
-                    interval.is_assumed())
+            if interval.is_selected():
+                self.add_interval(
+                        interval.name().split(),
+                        interval.end() - interval.start(),
+                        interval.is_assumed())
 
 
 class AggregateSessionDisplay(SessionDisplay):

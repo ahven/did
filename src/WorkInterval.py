@@ -26,7 +26,7 @@ class WorkInterval(object):
     '''
 
 
-    def __init__(self, start, end, name, is_assumed=False):
+    def __init__(self, start, end, name, is_assumed=False, is_selected=True):
         '''
         Constructor
         '''
@@ -34,6 +34,7 @@ class WorkInterval(object):
         self.end_ = end
         self.name_ = name
         self.is_assumed_ = is_assumed
+        self.is_selected_ = is_selected
 
     def is_break(self):
         return self.name_is_break(self.name_)
@@ -41,11 +42,17 @@ class WorkInterval(object):
     def is_assumed(self):
         return self.is_assumed_
 
+    def is_selected(self):
+        return self.is_selected_
+
     def start(self):
         return self.start_
 
     def end(self):
         return self.end_
+
+    def duration(self):
+        return self.end_ - self.start_
 
     def name(self):
         return self.name_

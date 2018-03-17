@@ -17,6 +17,7 @@ You should have received a copy of the GNU General Public License along with
 Foobar; if not, write to the Free Software Foundation, Inc., 51 Franklin St,
 Fifth Floor, Boston, MA  02110-1301  USA
 """
+import datetime
 
 from WorkInterval import WorkInterval
 
@@ -26,7 +27,7 @@ class WorkSession(object):
     '''
 
 
-    def __init__(self, start, is_workday=True):
+    def __init__(self, start, is_workday=True, filter_regex=None):
         '''
         start - When the day starts
 
@@ -36,15 +37,50 @@ class WorkSession(object):
         self.start_ = start
         self.is_workday_ = is_workday
         self.intervals_ = []
+        self.filter_regex_ = filter_regex
 
     def append_log_event(self, datetime, text):
-        self.intervals_.append(WorkInterval(self.end(), datetime, text, False))
+        self.intervals_.append(WorkInterval(
+                self.end(), datetime, text, False, self._is_matched(text)))
 
     def append_assumed_interval(self, datetime):
         if len(self.intervals_) > 0:
+            name = self.intervals_[-1].name()
             self.intervals_.append(
                     WorkInterval(
-                        self.end(), datetime, self.intervals_[-1].name(), True))
+                        self.end(), datetime, name, True, self._is_matched(name)))
+
+    def set_filter_regex(self, regex):
+        self.filter_regex_ = regex
+
+    def has_filter(self):
+        return self.filter_regex_ is not None
+
+    def has_matched_jobs(self):
+        for interval in self.intervals_:
+            if interval.is_selected():
+                return True
+        return False
+
+    def _is_matched(self, name):
+        if self.filter_regex_ is None:
+            return True
+        else:
+            return self.filter_regex_.search(name) is not None
+
+    def matched_work_time(self):
+        duration = datetime.timedelta(0)
+        for interval in self.intervals_:
+            if interval.is_selected() and not interval.is_break():
+                duration += interval.duration()
+        return duration
+
+    def matched_break_time(self):
+        duration = datetime.timedelta(0)
+        for interval in self.intervals_:
+            if interval.is_selected() and interval.is_break():
+                duration += interval.duration()
+        return duration
 
     def start(self):
         return self.start_

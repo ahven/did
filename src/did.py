@@ -63,6 +63,10 @@ class DidApplication:
             self.create_file(self.options.logfile)
 
         self.worklog = WorkLog()
+
+        if self.options.grep_pattern is not None:
+            self.worklog.set_filter_regex(re.compile(self.options.grep_pattern))
+
         for dt, text in job_reader(self.options.logfile):
             self.worklog.append_log_event(dt, text)
 
@@ -136,6 +140,12 @@ class DidApplication:
                           action="store_true",
                           dest="aggregate_range",
                           help="display jobs aggregated for the complete range")
+        parser.add_option("-g", "--grep",
+                          metavar="PATTERN",
+                          dest="grep_pattern",
+                          default=None,
+                          action="store",
+                          help="display only jobs matching given pattern")
         parser.add_option("-c", "--categorized",
                           action="store_true",
                           dest="categorized_report",
