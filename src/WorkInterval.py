@@ -20,6 +20,9 @@ Fifth Floor, Boston, MA  02110-1301  USA
 
 import re
 
+import datetime
+
+
 class WorkInterval(object):
     '''
     classdocs
@@ -35,6 +38,7 @@ class WorkInterval(object):
         self.name_ = name
         self.is_assumed_ = is_assumed
         self.is_selected_ = is_selected
+        self.accounted_break_seconds_ = 0
 
     def is_break(self):
         return self.name_is_break(self.name_)
@@ -51,8 +55,24 @@ class WorkInterval(object):
     def end(self):
         return self.end_
 
-    def duration(self):
+    def real_duration(self):
         return self.end_ - self.start_
+
+    def adjusted_duration(self):
+        return (self.end_ - self.start_
+                + datetime.timedelta(seconds=self.accounted_break_seconds_))
+
+    def duration(self, adjusted):
+        if adjusted:
+            return self.adjusted_duration()
+        else:
+            return self.real_duration()
+
+    def account_break_duration(self, seconds):
+        self.accounted_break_seconds_ += seconds
+
+    def account_work_duration(self, seconds):
+        self.accounted_break_seconds_ -= seconds
 
     def name(self):
         return self.name_

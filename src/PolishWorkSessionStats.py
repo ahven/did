@@ -30,6 +30,10 @@ class PolishWorkSessionStats(WorkSessionStats):
        down, but not up.  So this effectively gives a break lasting one twelfth
        of the recent work, but not longer than 5 minutes.
      * One 15 minutes break per day, if the day has at least 6 work hours.
+
+    The "adjusted duration" of breaks is decreased to exclude the time that
+    is treated as work time.  In return, the "adjusted duration" of work jobs
+    is extended proportionally for all work tasks in a session.
     '''
 
     short_break_after_seconds = 60 * 60   # Make a break after one hour
@@ -42,7 +46,8 @@ class PolishWorkSessionStats(WorkSessionStats):
         '''
         Constructor
         '''
-        super(PolishWorkSessionStats, self).__init__(session)
+        self.break_seconds_counted_as_work = 0
+        super().__init__(session)
 
     def _computer_break_scale(self):
         return 1.0 * self.short_break_duration_seconds \
@@ -55,19 +60,25 @@ class PolishWorkSessionStats(WorkSessionStats):
 
         return self.recent_work_seconds * self._computer_break_scale()
 
-    def _analyze_break(self, duration_seconds):
+    def _analyze_break(self, interval):
+        duration_seconds = interval.real_duration().total_seconds()
+
         used_short_break_seconds = min(
                 self._legal_break_seconds(), duration_seconds)
         used_long_break_seconds = min(
                 self.usable_long_break_seconds,
                 duration_seconds - used_short_break_seconds)
 
+        interval.account_work_duration(
+                used_short_break_seconds + used_long_break_seconds)
         self.add_work_seconds(
                 used_short_break_seconds + used_long_break_seconds)
         self.add_break_seconds(
                 duration_seconds
                 - used_short_break_seconds - used_long_break_seconds)
 
+        self.break_seconds_counted_as_work += (
+                used_short_break_seconds + used_long_break_seconds)
         self.recent_work_seconds -= \
                 used_short_break_seconds / self._computer_break_scale()
         self.usable_long_break_seconds -= used_long_break_seconds
@@ -83,10 +94,19 @@ class PolishWorkSessionStats(WorkSessionStats):
         else:
             self.usable_long_break_seconds = 0
 
-        for interval in self.session_.intervals():
-            duration = interval.end() - interval.start()
-            if interval.is_break():
-                self._analyze_break(duration.total_seconds())
-            else:
-                self._analyze_work(duration.total_seconds())
+        real_work_seconds = 0
 
+        for interval in self.session_.intervals():
+            if interval.is_break():
+                self._analyze_break(interval)
+            else:
+                duration = interval.end() - interval.start()
+                self._analyze_work(duration.total_seconds())
+                real_work_seconds += duration.total_seconds()
+
+        for interval in self.session_.intervals():
+            if not interval.is_break():
+                interval.account_break_duration(
+                        self.break_seconds_counted_as_work
+                        * interval.real_duration().total_seconds()
+                        / real_work_seconds)

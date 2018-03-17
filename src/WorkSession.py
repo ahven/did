@@ -68,18 +68,18 @@ class WorkSession(object):
         else:
             return self.filter_regex_.search(name) is not None
 
-    def matched_work_time(self):
+    def matched_work_time(self, adjusted):
         duration = datetime.timedelta(0)
         for interval in self.intervals_:
             if interval.is_selected() and not interval.is_break():
-                duration += interval.duration()
+                duration += interval.duration(adjusted)
         return duration
 
-    def matched_break_time(self):
+    def matched_break_time(self, adjusted):
         duration = datetime.timedelta(0)
         for interval in self.intervals_:
             if interval.is_selected() and interval.is_break():
-                duration += interval.duration()
+                duration += interval.duration(adjusted)
         return duration
 
     def start(self):

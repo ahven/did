@@ -88,10 +88,11 @@ class DidApplication:
         else:
             cls = ChronologicalSessionDisplay
 
-        session_display = cls(self.worklog, DayRange(self.options.range))
+        session_display = cls(self.worklog, DayRange(self.options.range),
+                              self.options.split_breaks)
 
         if self.options.percentage and (self.options.aggregate_range or self.options.aggregate_day):
-            session_display.set_unit(ReportTimePercent())
+            session_display.set_unit(ReportTimePercent(self.options.split_breaks))
         session_display.display()
 
     def apply_categorization(self):
@@ -154,6 +155,11 @@ class DidApplication:
                           action="store_true",
                           dest="percentage",
                           help="print times as percentage of total work time")
+        parser.add_option("-s", "--split-breaks",
+                          action="store_true",
+                          dest="split_breaks",
+                          help="account the break time that is treated as work time"
+                               "evenly across all work jobs in a session")
         (options, args) = parser.parse_args()
         self.options = options
         self.args = args

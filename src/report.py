@@ -75,9 +75,10 @@ def get_duration_color(is_break, is_assumed):
         return Foreground.magenta + Attributes.bold
 
 class Display:
-    def __init__(self, worklog, day_range):
+    def __init__(self, worklog, day_range, adjusted):
         self.worklog = worklog
         self.day_range = day_range
+        self.adjusted = adjusted
         self.stats_unit = ReportTimeHoursMinutes()
         self.job_unit = ReportTimeHoursMinutes()
         self.total_work_time = datetime.timedelta(0)
@@ -91,8 +92,8 @@ class Display:
                 self.total_work_time += session.stats().time_worked()
                 self.total_break_time += session.stats().time_slacked()
                 self.total_overtime += session.stats().overhours()
-                self.matched_work_time += session.matched_work_time()
-                self.matched_break_time += session.matched_break_time()
+                self.matched_work_time += session.matched_work_time(adjusted)
+                self.matched_break_time += session.matched_break_time(adjusted)
         self.job_unit.set_total_work_time(self.total_work_time)
 
     def set_unit(self, unit):
@@ -119,9 +120,9 @@ class Display:
                 self.stats_unit.to_string(self.total_overtime)))
 
 class SessionDisplay(Display):
-    def __init__(self, worklog, day_range):
+    def __init__(self, worklog, day_range, adjusted):
         self.sessions = []
-        Display.__init__(self, worklog, day_range)
+        Display.__init__(self, worklog, day_range, adjusted)
 
     def append_session(self, session):
         self.sessions.append(session)
@@ -163,8 +164,8 @@ class SessionDisplay(Display):
                     self.stats_unit.to_string(session.total_overtime())))
 
 class ChronologicalSessionDisplay(SessionDisplay):
-    def __init__(self, worklog, day_range):
-        SessionDisplay.__init__(self, worklog, day_range)
+    def __init__(self, worklog, day_range, adjusted):
+        SessionDisplay.__init__(self, worklog, day_range, adjusted)
 
     def print_session_content(self, session):
         if len(session.intervals()) == 0:
@@ -187,7 +188,7 @@ class ChronologicalSessionDisplay(SessionDisplay):
                 get_name_color(interval.is_break(), interval.is_assumed()),
                 name,
                 get_duration_color(interval.is_break(), interval.is_assumed()),
-                self.job_unit.to_string(interval.end() - interval.start()))
+                self.job_unit.to_string(interval.duration(self.adjusted)))
 
     def print_log_line(
             self, start, end, name_color, name, duration_color, duration):
@@ -203,8 +204,9 @@ class ChronologicalSessionDisplay(SessionDisplay):
 
 
 class AggregateTreeNode:
-    def __init__(self):
+    def __init__(self, adjusted):
         self.children = {}
+        self.adjusted = adjusted
 
     def add_interval(self, name_words, duration, is_assumed):
         if duration == datetime.timedelta(0):
@@ -219,7 +221,7 @@ class AggregateTreeNode:
             self.children[name] += duration
         else:
             if name_words[0] not in self.children:
-                self.children[name_words[0]] = AggregateTreeNode()
+                self.children[name_words[0]] = AggregateTreeNode(self.adjusted)
             self.children[name_words[0]].add_interval(
                     name_words[1:], duration, is_assumed)
 
@@ -285,25 +287,25 @@ class AggregateTreeNode:
             if interval.is_selected():
                 self.add_interval(
                         interval.name().split(),
-                        interval.end() - interval.start(),
+                        interval.duration(self.adjusted),
                         interval.is_assumed())
 
 
 class AggregateSessionDisplay(SessionDisplay):
-    def __init__(self, worklog, day_range):
-        SessionDisplay.__init__(self, worklog, day_range)
+    def __init__(self, worklog, day_range, adjusted):
+        SessionDisplay.__init__(self, worklog, day_range, adjusted)
 
     def print_session_content(self, session):
-        self.tree = AggregateTreeNode()
+        self.tree = AggregateTreeNode(self.adjusted)
         self.tree.add_session(session)
         self.tree.simplify()
         self.tree.display(self.job_unit)
 
 
 class AggregateRangeDisplay(Display):
-    def __init__(self, worklog, day_range):
-        self.tree = AggregateTreeNode()
-        Display.__init__(self, worklog, day_range)
+    def __init__(self, worklog, day_range, adjusted):
+        self.tree = AggregateTreeNode(adjusted)
+        Display.__init__(self, worklog, day_range, adjusted)
 
     def append_session(self, session):
         self.tree.add_session(session)
