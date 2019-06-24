@@ -20,22 +20,8 @@ Fifth Floor, Boston, MA  02110-1301  USA
 
 import unittest
 import datetime
-from PolishWorkSessionStats import PolishWorkSessionStats
-
-class IntervalMock:
-    def __init__(self, start, end, is_break):
-        self.start_ = start
-        self.end_ = end
-        self.is_break_ = is_break
-
-    def start(self):
-        return self.start_
-
-    def end(self):
-        return self.end_
-
-    def is_break(self):
-        return self.is_break_
+from did.PolishWorkSessionStats import PolishWorkSessionStats
+from did.WorkInterval import WorkInterval
 
 
 class SessionMock:
@@ -49,7 +35,10 @@ class SessionMock:
     def append_interval(self, seconds, is_break):
         start = self._end()
         end = start + datetime.timedelta(0, seconds)
-        self.intervals_.append(IntervalMock(start, end, is_break))
+        self.intervals_.append(
+            WorkInterval(start, end,
+                         name='interval{}'.format(len(self.intervals_)),
+                         is_break=is_break))
 
     def is_workday(self):
         return self.is_workday_
@@ -61,7 +50,7 @@ class SessionMock:
             return self.intervals_[-1].end()
 
 
-class BasicSessionTest(unittest.TestCase):
+class TestBasicSession(unittest.TestCase):
 
 
     def setUp(self):

@@ -18,7 +18,7 @@ Foobar; if not, write to the Free Software Foundation, Inc., 51 Franklin St,
 Fifth Floor, Boston, MA  02110-1301  USA
 """
 
-from WorkSessionStats import WorkSessionStats
+from did.WorkSessionStats import WorkSessionStats
 
 
 class PolishWorkSessionStats(WorkSessionStats):
@@ -44,7 +44,7 @@ class PolishWorkSessionStats(WorkSessionStats):
 
     def __init__(self, session):
         '''
-        Constructor
+        :param session:
         '''
         self.break_seconds_counted_as_work = 0
         super().__init__(session)

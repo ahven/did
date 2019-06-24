@@ -5,7 +5,7 @@ Created on 2012-06-29
 '''
 import unittest
 import datetime
-from DayRange import DayRange, InvalidRangeFormatError
+from did.DayRange import DayRange, InvalidRangeFormatError
 
 def d(year, month, day):
     return datetime.date(year, month, day)

@@ -20,7 +20,7 @@ Fifth Floor, Boston, MA  02110-1301  USA
 
 import unittest
 import datetime
-from report import AggregateTreeNode
+from did.report import AggregateTreeNode
 
 
 class TestNameSimplification(unittest.TestCase):
@@ -39,14 +39,14 @@ class TestNameSimplification(unittest.TestCase):
                 self.assertTreeEqual(got.children[key], expected[key])
 
     def test_insert_1_1_level_item(self):
-        tree = AggregateTreeNode()
+        tree = AggregateTreeNode(adjusted=False)
         tree.add_interval(["a"], self.t1, False)
         self.assertTreeEqual(tree, {"a": {"": None}})
         tree.simplify()
         self.assertTreeEqual(tree, {"a": None})
 
     def test_insert_2_1_level_items(self):
-        tree = AggregateTreeNode()
+        tree = AggregateTreeNode(adjusted=False)
         tree.add_interval(["a"], self.t1, False)
         tree.add_interval(["x"], self.t1, False)
         self.assertTreeEqual(tree, {"a": {"": None}, "x": {"": None}})
@@ -54,7 +54,7 @@ class TestNameSimplification(unittest.TestCase):
         self.assertTreeEqual(tree, {"a": None, "x": None})
 
     def test_insert_repeated_1_level_item(self):
-        tree = AggregateTreeNode()
+        tree = AggregateTreeNode(adjusted=False)
         tree.add_interval(["a"], self.t1, False)
         tree.add_interval(["a"], self.t1, False)
         self.assertTreeEqual(tree, {"a": {"": None}})
@@ -62,14 +62,14 @@ class TestNameSimplification(unittest.TestCase):
         self.assertTreeEqual(tree, {"a": None})
 
     def test_insert_1_2_level_item(self):
-        tree = AggregateTreeNode()
+        tree = AggregateTreeNode(adjusted=False)
         tree.add_interval(["a", "b"], self.t1, False)
         self.assertTreeEqual(tree, {"a": {"b": {"": None}}})
         tree.simplify()
         self.assertTreeEqual(tree, {"a b": None})
 
     def test_insert_2_2_level_items(self):
-        tree = AggregateTreeNode()
+        tree = AggregateTreeNode(adjusted=False)
         tree.add_interval(["a", "b"], self.t1, False)
         tree.add_interval(["x", "y"], self.t1, False)
         self.assertTreeEqual(tree, {"a": {"b": {"": None}}, "x": {"y": {"": None}}})
@@ -77,7 +77,7 @@ class TestNameSimplification(unittest.TestCase):
         self.assertTreeEqual(tree, {"a b": None, "x y": None})
 
     def test_insert_2_2_level_items_with_common_level_1(self):
-        tree = AggregateTreeNode()
+        tree = AggregateTreeNode(adjusted=False)
         tree.add_interval(["a", "b"], self.t1, False)
         tree.add_interval(["a", "c"], self.t1, False)
         self.assertTreeEqual(tree, {"a": {"b": {"": None}, "c": {"": None}}})
@@ -85,7 +85,7 @@ class TestNameSimplification(unittest.TestCase):
         self.assertTreeEqual(tree, {"a": {"b": None, "c": None}})
 
     def test_insert_2_3_level_items_with_common_level_1(self):
-        tree = AggregateTreeNode()
+        tree = AggregateTreeNode(adjusted=False)
         tree.add_interval(["a", "b", "c"], self.t1, False)
         tree.add_interval(["a", "d", "e"], self.t1, False)
         self.assertTreeEqual(tree, {"a": {"b": {"c": {"": None}}, "d": {"e": {"": None}}}})
@@ -93,7 +93,7 @@ class TestNameSimplification(unittest.TestCase):
         self.assertTreeEqual(tree, {"a": {"b c": None, "d e": None}})
 
     def test_insert_2_3_level_items_with_common_levels_1_and_2(self):
-        tree = AggregateTreeNode()
+        tree = AggregateTreeNode(adjusted=False)
         tree.add_interval(["a", "b", "c"], self.t1, False)
         tree.add_interval(["a", "b", "d"], self.t1, False)
         self.assertTreeEqual(tree, {"a": {"b": {"c": {"": None}, "d": {"": None}}}})
@@ -101,7 +101,7 @@ class TestNameSimplification(unittest.TestCase):
         self.assertTreeEqual(tree, {"a b": {"c": None, "d": None}})
 
     def test_insert_2_3_level_items_with_common_level_1_and_1_different_level_1(self):
-        tree = AggregateTreeNode()
+        tree = AggregateTreeNode(adjusted=False)
         tree.add_interval(["a", "b", "c"], self.t1, False)
         tree.add_interval(["a", "d", "e"], self.t1, False)
         tree.add_interval(["x"], self.t1, False)
@@ -110,7 +110,7 @@ class TestNameSimplification(unittest.TestCase):
         self.assertTreeEqual(tree, {"a": {"b c": None, "d e": None}, "x": None})
 
     def test_insert_2_3_level_items_with_common_levels_1_and_2_and_1_different_level_1(self):
-        tree = AggregateTreeNode()
+        tree = AggregateTreeNode(adjusted=False)
         tree.add_interval(["a", "b", "c"], self.t1, False)
         tree.add_interval(["a", "b", "d"], self.t1, False)
         tree.add_interval(["x"], self.t1, False)
@@ -119,7 +119,7 @@ class TestNameSimplification(unittest.TestCase):
         self.assertTreeEqual(tree, {"a b": {"c": None, "d": None}, "x": None})
 
     def test_insert_2_3_level_items_with_common_levels_1_and_2_and_1_with_common_level_1(self):
-        tree = AggregateTreeNode()
+        tree = AggregateTreeNode(adjusted=False)
         tree.add_interval(["a", "b", "c"], self.t1, False)
         tree.add_interval(["a", "b", "d"], self.t1, False)
         tree.add_interval(["a", "x"], self.t1, False)

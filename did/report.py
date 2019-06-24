@@ -18,9 +18,9 @@ Foobar; if not, write to the Free Software Foundation, Inc., 51 Franklin St,
 Fifth Floor, Boston, MA  02110-1301  USA
 """
 
-from console_codes import Foreground, Attributes
+from did.console_codes import Foreground, Attributes
 import datetime
-from WorkInterval import WorkInterval
+from did.WorkInterval import WorkInterval
 
 class ReportTimeUnit:
     def __init__(self, adjusted):
