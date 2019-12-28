@@ -103,11 +103,11 @@ class DidApplication:
 
     def apply_categorization(self):
         filename = self.get_config_dir() + "/categorization"
-        rx = re.compile("^s/((?:[^\\\\/]|\\\\.)+)/((?:[^\\\\/]|\\\\.)*)/\s*$")
+        rx = re.compile("^s/((?:[^\\\\/]|\\\\.)+)/((?:[^\\\\/]|\\\\.)*)/\\s*$")
         try:
             f = open(filename, "r")
             for line in f:
-                if re.match("^\s*(#|$)", line):
+                if re.match("^\\s*(#|$)", line):
                     continue
                 m = rx.match(line)
                 if not m:
