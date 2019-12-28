@@ -22,12 +22,14 @@ from did.console_codes import Foreground, Attributes
 import datetime
 from did.WorkInterval import WorkInterval
 
+
 class ReportTimeUnit:
     def __init__(self, adjusted):
         self.adjusted_string = '*' if adjusted else ''
 
     def set_total_work_time(self, total_work_time):
         self.total_work_time = total_work_time
+
 
 class ReportTimePercent(ReportTimeUnit):
     def to_string(self, diff):
@@ -37,6 +39,7 @@ class ReportTimePercent(ReportTimeUnit):
                                  self.adjusted_string)
         else:
             return "NAN"
+
 
 class ReportTimeHoursMinutes(ReportTimeUnit):
     def to_string(self, diff):
@@ -57,11 +60,13 @@ class ReportTimeHoursMinutes(ReportTimeUnit):
         time += self.adjusted_string
         return time
 
+
 def time_as_string(time):
     if time:
         return "%02d:%02d" % (time.hour, time.minute)
     else:
         return "     "
+
 
 def get_name_color(is_break, is_assumed):
     if is_break:
@@ -71,6 +76,7 @@ def get_name_color(is_break, is_assumed):
     else:
         return Foreground.brown + Attributes.bold
 
+
 def get_duration_color(is_break, is_assumed):
     if is_break:
         return ""
@@ -78,6 +84,7 @@ def get_duration_color(is_break, is_assumed):
         return Foreground.magenta
     else:
         return Foreground.magenta + Attributes.bold
+
 
 class Display:
     def __init__(self, worklog, day_range, adjusted):
@@ -125,6 +132,7 @@ class Display:
                 self.overall_stats_unit.to_string(self.total_break_time),
                 self.overall_stats_unit.to_string(self.total_overtime)))
 
+
 class SessionDisplay(Display):
     def __init__(self, worklog, day_range, adjusted):
         self.sessions = []
@@ -168,6 +176,7 @@ class SessionDisplay(Display):
                     self.overall_stats_unit.to_string(break_time),
                     self.overall_stats_unit.to_string(overtime),
                     self.overall_stats_unit.to_string(session.total_overtime())))
+
 
 class ChronologicalSessionDisplay(SessionDisplay):
     def __init__(self, worklog, day_range, adjusted):

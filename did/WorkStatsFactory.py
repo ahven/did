@@ -21,11 +21,11 @@ Fifth Floor, Boston, MA  02110-1301  USA
 from PolishWorkSessionStats import PolishWorkSessionStats
 from WorkSessionStats import WorkSessionStats
 
+
 class WorkStatsFactory(object):
     '''
     classdocs
     '''
-
 
     def __init__(self, country):
         '''

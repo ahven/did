@@ -28,7 +28,6 @@ class WorkInterval(object):
     classdocs
     '''
 
-
     def __init__(self, start, end, name, is_assumed=False, is_selected=True, is_break=None):
         '''
         Constructor

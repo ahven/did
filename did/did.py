@@ -35,6 +35,7 @@ from robfile import job_reader, JobListWriter
 from optparse import OptionParser
 from DayRange import DayRange
 
+
 def forward_slash_unescape(escaped):
     unescaped = ''
     i = 0
@@ -51,8 +52,8 @@ def forward_slash_unescape(escaped):
         i += 1
     return unescaped
 
-class DidApplication:
 
+class DidApplication:
     def run(self):
         self.parse_options()
 

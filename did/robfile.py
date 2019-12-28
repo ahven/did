@@ -22,6 +22,7 @@ import datetime
 import re
 from WorkLog import NonChronologicalOrderError
 
+
 def job_reader(path):
     """
     Generator reading lines from a work log file.
@@ -54,6 +55,7 @@ def job_reader(path):
     except IOError as err:
         print("Error opening/reading from file '{0}': {1}".format(
                 err.filename, err.strerror))
+
 
 class JobListWriter:
     def __init__(self, filename):

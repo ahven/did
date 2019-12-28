@@ -26,7 +26,6 @@ class WorkSessionStats(object):
     Count total work time and break time for a WorkSession
     '''
 
-
     def __init__(self, session):
         self.session_ = session
         self.time_worked_ = datetime.timedelta(0)

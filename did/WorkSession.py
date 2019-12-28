@@ -21,11 +21,11 @@ import datetime
 
 from WorkInterval import WorkInterval
 
+
 class WorkSession(object):
     '''
     classdocs
     '''
-
 
     def __init__(self, start, is_workday=True, filter_regex=None):
         '''
