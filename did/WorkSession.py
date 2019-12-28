@@ -19,7 +19,7 @@ Fifth Floor, Boston, MA  02110-1301  USA
 """
 import datetime
 
-from WorkInterval import WorkInterval
+from did.WorkInterval import WorkInterval
 
 
 class WorkSession(object):

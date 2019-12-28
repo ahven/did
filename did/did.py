@@ -27,13 +27,14 @@ import os
 import re
 import subprocess
 import sys
-from WorkLog import WorkLog
-from WorkStatsFactory import WorkStatsFactory
-from report import ChronologicalSessionDisplay, AggregateSessionDisplay, \
-        AggregateRangeDisplay, ReportTimePercent
-from robfile import job_reader, JobListWriter
 from optparse import OptionParser
-from DayRange import DayRange
+
+from did.WorkLog import WorkLog
+from did.WorkStatsFactory import WorkStatsFactory
+from did.report import ChronologicalSessionDisplay, AggregateSessionDisplay, \
+        AggregateRangeDisplay, ReportTimePercent
+from did.robfile import job_reader, JobListWriter
+from did.DayRange import DayRange
 
 
 def forward_slash_unescape(escaped):
@@ -218,6 +219,10 @@ class DidApplication:
         self.worklog.append_log_event(now, name)
 
 
+def main():
+    app = DidApplication()
+    app.run()
+
+
 if __name__ == "__main__":
-    did = DidApplication()
-    did.run()
+    main()

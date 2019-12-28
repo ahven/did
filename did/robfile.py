@@ -20,7 +20,7 @@ Fifth Floor, Boston, MA  02110-1301  USA
 
 import datetime
 import re
-from WorkLog import NonChronologicalOrderError
+from did.WorkLog import NonChronologicalOrderError
 
 
 def job_reader(path):
