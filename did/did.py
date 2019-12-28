@@ -55,6 +55,10 @@ def forward_slash_unescape(escaped):
 
 
 class DidApplication:
+    def __init__(self, cmdline_args):
+        self.args = None
+        self.cmdline_args = cmdline_args
+
     def run(self):
         self.parse_options()
 
@@ -169,7 +173,7 @@ class DidApplication:
         parser.add_argument('current_task',
                             nargs=argparse.REMAINDER,
                             help='What have you just been doing?')
-        self.args = parser.parse_args()
+        self.args = parser.parse_args(self.cmdline_args)
 
     def open_editor(self):
         editors = []
@@ -224,8 +228,8 @@ class DidApplication:
         self.worklog.append_log_event(now, name)
 
 
-def main():
-    app = DidApplication()
+def main(cmdline_args=sys.argv):
+    app = DidApplication(cmdline_args)
     app.run()
 
 
