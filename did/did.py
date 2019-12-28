@@ -204,7 +204,8 @@ class DidApplication:
         dirpart, unused_filepart = os.path.split(filename)
         if dirpart != '':
             self.mkdir_p(dirpart)
-        file(filename, 'a').close()
+        with open(filename, 'a'):
+            pass
 
     def append_event(self, name):
         if name == ".":

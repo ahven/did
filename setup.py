@@ -7,7 +7,7 @@ setup(
    author='Michał Czuczman',
    # author_email='',
    packages=['did'],
-   install_requires=[],
+   install_requires=['pytest'],
    entry_points = {
         'console_scripts': ['did=did.did:main'],
    },
