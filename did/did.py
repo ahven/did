@@ -21,13 +21,13 @@ Foobar; if not, write to the Free Software Foundation, Inc., 51 Franklin St,
 Fifth Floor, Boston, MA  02110-1301  USA
 """
 
+import argparse
 import datetime
 import errno
 import os
 import re
 import subprocess
 import sys
-from optparse import OptionParser
 
 from did.WorkLog import WorkLog
 from did.WorkStatsFactory import WorkStatsFactory
@@ -58,43 +58,43 @@ class DidApplication:
     def run(self):
         self.parse_options()
 
-        if self.options.run_editor:
+        if self.args.run_editor:
             self.open_editor()
 
-        if not os.path.exists(self.options.logfile):
-            self.create_file(self.options.logfile)
+        if not os.path.exists(self.args.logfile):
+            self.create_file(self.args.logfile)
 
         self.worklog = WorkLog()
 
-        if self.options.grep_pattern is not None:
-            self.worklog.set_filter_regex(re.compile(self.options.grep_pattern))
+        if self.args.grep_pattern is not None:
+            self.worklog.set_filter_regex(re.compile(self.args.grep_pattern))
 
-        for dt, text in job_reader(self.options.logfile):
+        for dt, text in job_reader(self.args.logfile):
             self.worklog.append_log_event(dt, text)
 
-        if 0 < len(self.args):
-            self.append_event(" ".join(self.args))
+        if 0 < len(self.args.current_task):
+            self.append_event(" ".join(self.args.current_task))
         elif self.worklog.end():
             if self.worklog.end().date() == datetime.date.today():
                 self.worklog.append_assumed_interval(datetime.datetime.now())
 
-        if self.options.categorized_report:
+        if self.args.categorized_report:
             self.apply_categorization()
 
         self.worklog.compute_stats(WorkStatsFactory("PL"))
 
-        if self.options.aggregate_range:
+        if self.args.aggregate_range:
             cls = AggregateRangeDisplay
-        elif self.options.aggregate_day:
+        elif self.args.aggregate_day:
             cls = AggregateSessionDisplay
         else:
             cls = ChronologicalSessionDisplay
 
-        session_display = cls(self.worklog, DayRange(self.options.range),
-                              self.options.split_breaks)
+        session_display = cls(self.worklog, DayRange(self.args.range),
+                              self.args.split_breaks)
 
-        if self.options.percentage and (self.options.aggregate_range or self.options.aggregate_day):
-            session_display.set_unit(ReportTimePercent(self.options.split_breaks))
+        if self.args.percentage and (self.args.aggregate_range or self.args.aggregate_day):
+            session_display.set_unit(ReportTimePercent(self.args.split_breaks))
         session_display.display()
 
     def apply_categorization(self):
@@ -120,51 +120,56 @@ class DidApplication:
                     err.filename, err.strerror))
 
     def parse_options(self):
-        parser = OptionParser(usage="%prog [options] [CURRENT-TASK]")
-        parser.add_option("-f", "--log-file",
-                          metavar="FILE",
-                          dest="logfile",
-                          default=self.get_config_dir() + "/joblog",
-                          action="store",
-                          help="set the task database file")
-        parser.add_option("-e", "--edit", action="store_true",
-                          dest="run_editor",
-                          help="open the task database file in an editor")
-        parser.add_option("-r", "--range",
-                          dest="range",
-                          default="0",
-                          action="store",
-                          help="print log for days within given range")
-        parser.add_option("-d", "--aggregate-day",
-                          action="store_true",
-                          dest="aggregate_day",
-                          help="display jobs aggregated for each day")
-        parser.add_option("-a", "--aggregate",
-                          action="store_true",
-                          dest="aggregate_range",
-                          help="display jobs aggregated for the complete range")
-        parser.add_option("-g", "--grep",
-                          metavar="PATTERN",
-                          dest="grep_pattern",
-                          default=None,
-                          action="store",
-                          help="display only jobs matching given pattern")
-        parser.add_option("-c", "--categorized",
-                          action="store_true",
-                          dest="categorized_report",
-                          help="apply categorizing regexes to job names")
-        parser.add_option("-p", "--percentage",
-                          action="store_true",
-                          dest="percentage",
-                          help="print times as percentage of total work time")
-        parser.add_option("-s", "--split-breaks",
-                          action="store_true",
-                          dest="split_breaks",
-                          help="account the break time that is treated as work time"
-                               "evenly across all work jobs in a session")
-        (options, args) = parser.parse_args()
-        self.options = options
-        self.args = args
+        parser = argparse.ArgumentParser(
+            description='Command-line time tracking tool',
+            usage='%(prog)s [options] [CURRENT-TASK]')
+        parser.add_argument("-f", "--log-file",
+                            metavar="FILE",
+                            dest="logfile",
+                            default=self.get_config_dir() + "/joblog",
+                            action="store",
+                            help="set the task database file")
+        parser.add_argument("-e", "--edit", action="store_true",
+                            dest="run_editor",
+                            help="open the task database file in an editor")
+        parser.add_argument("-r", "--range",
+                            dest="range",
+                            default="0",
+                            action="store",
+                            help="print log for days within given range")
+        parser.add_argument("-d", "--aggregate-day",
+                            action="store_true",
+                            dest="aggregate_day",
+                            help="display jobs aggregated for each day")
+        parser.add_argument("-a", "--aggregate",
+                            action="store_true",
+                            dest="aggregate_range",
+                            help="display jobs aggregated for the complete "
+                                 "range")
+        parser.add_argument("-g", "--grep",
+                            metavar="PATTERN",
+                            dest="grep_pattern",
+                            default=None,
+                            action="store",
+                            help="display only jobs matching given pattern")
+        parser.add_argument("-c", "--categorized",
+                            action="store_true",
+                            dest="categorized_report",
+                            help="apply categorizing regexes to job names")
+        parser.add_argument("-p", "--percentage",
+                            action="store_true",
+                            dest="percentage",
+                            help="print times as percentage of total work time")
+        parser.add_argument("-s", "--split-breaks",
+                            action="store_true",
+                            dest="split_breaks",
+                            help="account the break time that is treated as "
+                                 "work time evenly across all work jobs in a "
+                                 "session")
+        parser.add_argument('current_task',
+                            nargs=argparse.REMAINDER,
+                            help='What have you just been doing?')
+        self.args = parser.parse_args()
 
     def open_editor(self):
         editors = []
@@ -176,7 +181,7 @@ class DidApplication:
                         "/usr/bin/vi", "/usr/bin/mcedit"])
         for editor in editors:
             if os.path.exists(editor):
-                subprocess.call([editor, self.options.logfile])
+                subprocess.call([editor, self.args.logfile])
                 sys.exit()
 
     def get_config_dir(self):
@@ -213,7 +218,7 @@ class DidApplication:
             else:
                 name = last_work.name()
 
-        writer = JobListWriter(self.options.logfile)
+        writer = JobListWriter(self.args.logfile)
         now = datetime.datetime.now()
         writer.append(now, name)
         self.worklog.append_log_event(now, name)
