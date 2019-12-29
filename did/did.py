@@ -29,11 +29,10 @@ import re
 import subprocess
 import sys
 
-from did.WorkLog import WorkLog
+from did.worklog import WorkLog, job_reader, JobListWriter
 from did.WorkStatsFactory import WorkStatsFactory
 from did.report import ChronologicalSessionDisplay, AggregateSessionDisplay, \
         AggregateRangeDisplay, ReportTimePercent
-from did.robfile import job_reader, JobListWriter
 from did.DayRange import DayRange
 
 
