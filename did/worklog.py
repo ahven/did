@@ -137,7 +137,7 @@ def job_reader(path):
 
     In each iteration the generator returns a (datetime, text) tuple.
     """
-    pattern = "(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2})(?::(\d{2}))?: (.+)$"
+    pattern = r"(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2})(?::(\d{2}))?: (.+)$"
     rx = re.compile(pattern)
     try:
         f = open(path, "r")
@@ -155,7 +155,7 @@ def job_reader(path):
                 dt = datetime.datetime(
                         year, month, day, hour, minute, second)
                 yield dt, text
-            elif not re.match("#|\s*$", line):
+            elif not re.match(r"#|\s*$", line):
                 raise Exception("Invalid line", line)
     except NonChronologicalOrderError as err:
         print("Error: Non-chronological entries: appending", \
