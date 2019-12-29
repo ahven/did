@@ -24,14 +24,14 @@ import datetime
 
 
 class WorkInterval(object):
-    '''
+    """
     classdocs
-    '''
+    """
 
     def __init__(self, start, end, name, is_assumed=False, is_selected=True, is_break=None):
-        '''
+        """
         Constructor
-        '''
+        """
         self.start_ = start
         self.end_ = end
         self.name_ = name

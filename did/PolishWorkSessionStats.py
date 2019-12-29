@@ -22,7 +22,7 @@ from did.WorkSessionStats import WorkSessionStats
 
 
 class PolishWorkSessionStats(WorkSessionStats):
-    '''
+    """
     Count official work session stats in Poland.
 
     Breaks treated as worktime:
@@ -34,7 +34,7 @@ class PolishWorkSessionStats(WorkSessionStats):
     The "adjusted duration" of breaks is decreased to exclude the time that
     is treated as work time.  In return, the "adjusted duration" of work jobs
     is extended proportionally for all work tasks in a session.
-    '''
+    """
 
     short_break_after_seconds = 60 * 60   # Make a break after one hour
     short_break_duration_seconds = 5 * 60 # The break lasts 5 minutes
@@ -43,9 +43,9 @@ class PolishWorkSessionStats(WorkSessionStats):
 
 
     def __init__(self, session):
-        '''
+        """
         :param session:
-        '''
+        """
         self.break_seconds_counted_as_work = 0
         super().__init__(session)
 

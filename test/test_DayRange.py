@@ -1,8 +1,8 @@
-'''
+"""
 Created on 2012-06-29
 
 @author: ahven
-'''
+"""
 import unittest
 import datetime
 from did.DayRange import DayRange, InvalidRangeFormatError

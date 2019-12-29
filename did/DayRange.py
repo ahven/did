@@ -1,8 +1,8 @@
-'''
+"""
 Created on 2012-06-04
 
 @author: ahven
-'''
+"""
 
 import datetime
 import re
@@ -60,7 +60,7 @@ class PatternDecoratorDispatcher:
 
 
 class DayRange:
-    '''
+    """
     A range of days
 
     One day formats:
@@ -83,14 +83,14 @@ class DayRange:
 
     Range formats:
      * <first>..<last>
-    '''
+    """
 
     patterns = PatternDecoratorDispatcher()
 
     def __init__(self, range_specs):
-        '''
+        """
         Constructor
-        '''
+        """
         self.set_range_text(range_specs)
 
     def first_day(self):

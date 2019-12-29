@@ -45,15 +45,15 @@ class NonChronologicalOrderError(Exception):
 
 
 class WorkLog(object):
-    '''
+    """
     A WorkLog keeps all information throughout the whole history.
     It consists of WorkSession's.
-    '''
+    """
 
     def __init__(self, file_name, filter_regex=None):
-        '''
+        """
         Constructor
-        '''
+        """
         self.sessions_ = []
         self.file_name = file_name
         self.filter_regex = filter_regex

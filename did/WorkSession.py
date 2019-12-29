@@ -23,17 +23,17 @@ from did.WorkInterval import WorkInterval
 
 
 class WorkSession(object):
-    '''
+    """
     classdocs
-    '''
+    """
 
     def __init__(self, start, is_workday=True, filter_regex=None):
-        '''
+        """
         start - When the day starts
 
         is_workday - True if this is your workday,
             False if this complete session is overhours
-        '''
+        """
         self.start_ = start
         self.is_workday_ = is_workday
         self.intervals_ = []

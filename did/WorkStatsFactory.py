@@ -23,14 +23,14 @@ from did.WorkSessionStats import WorkSessionStats
 
 
 class WorkStatsFactory(object):
-    '''
+    """
     classdocs
-    '''
+    """
 
     def __init__(self, country):
-        '''
+        """
         Constructor
-        '''
+        """
         self.country_ = country
         
     def new_session_stats(self, session):
