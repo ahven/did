@@ -30,7 +30,7 @@ import subprocess
 import sys
 
 from did.worklog import WorkLog, JobListWriter
-from did.WorkStatsFactory import WorkStatsFactory
+from did.worktime import WorkStatsFactory
 from did.report import ChronologicalSessionDisplay, AggregateSessionDisplay, \
         AggregateRangeDisplay, ReportTimePercent
 from did.DayRange import DayRange

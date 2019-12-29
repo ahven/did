@@ -20,7 +20,7 @@ Fifth Floor, Boston, MA  02110-1301  USA
 
 import unittest
 import datetime
-from did.PolishWorkSessionStats import PolishWorkSessionStats
+from did.worktime import PolishWorkSessionStats
 from did.WorkInterval import WorkInterval
 
 
