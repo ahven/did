@@ -50,12 +50,19 @@ class WorkLog(object):
     It consists of WorkSession's.
     '''
 
-    def __init__(self):
+    def __init__(self, file_name, filter_regex=None):
         '''
         Constructor
         '''
         self.sessions_ = []
-        self.filter_regex = None
+        self.file_name = file_name
+        self.filter_regex = filter_regex
+
+        if isinstance(self.filter_regex, str):
+            self.filter_regex = re.compile(self.filter_regex)
+
+        for dt, text in job_reader(file_name):
+            self.append_log_event(dt, text)
 
     def _check_chronology(self, datetime):
         end = self.end()

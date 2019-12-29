@@ -29,7 +29,7 @@ import re
 import subprocess
 import sys
 
-from did.worklog import WorkLog, job_reader, JobListWriter
+from did.worklog import WorkLog, JobListWriter
 from did.WorkStatsFactory import WorkStatsFactory
 from did.report import ChronologicalSessionDisplay, AggregateSessionDisplay, \
         AggregateRangeDisplay, ReportTimePercent
@@ -67,13 +67,8 @@ class DidApplication:
         if not os.path.exists(self.args.logfile):
             self.create_file(self.args.logfile)
 
-        self.worklog = WorkLog()
-
-        if self.args.grep_pattern is not None:
-            self.worklog.set_filter_regex(re.compile(self.args.grep_pattern))
-
-        for dt, text in job_reader(self.args.logfile):
-            self.worklog.append_log_event(dt, text)
+        self.worklog = WorkLog(file_name=self.args.logfile,
+                               filter_regex=self.args.grep_pattern)
 
         if 0 < len(self.args.current_task):
             self.append_event(" ".join(self.args.current_task))
