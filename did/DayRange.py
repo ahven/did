@@ -8,6 +8,9 @@ import datetime
 import re
 
 
+today = datetime.date.today()
+
+
 # http://stackoverflow.com/questions/304256/whats-the-best-way-to-find-the-inverse-of-datetime-isocalendar
 def iso_to_gregorian(iso_year, iso_week, iso_day):
     "Gregorian calendar date for the given ISO year, week and day"
@@ -128,7 +131,6 @@ class DayRange:
 
     @patterns.register(r'^(0?[1-9]|1[012])-(0[1-9]|[12][0-9]|3[01])$')
     def _pattern_mm_dd(self, groups):
-        today = datetime.date.today()
         month = int(groups[0])
         day = int(groups[1])
 
@@ -143,7 +145,6 @@ class DayRange:
 
     @patterns.register(r'^(0?[1-9]|[12][0-9]|3[01])$')
     def _pattern_dd(self, groups):
-        today = datetime.date.today()
         year = today.year
         month = today.month
         day = int(groups[0])
@@ -164,12 +165,11 @@ class DayRange:
 
     @patterns.register(r'^-(0|[1-9][0-9]*)$')
     def _pattern_x_days_ago(self, groups):
-        today = datetime.date.today()
         self.set_date(today - datetime.timedelta(int(groups[0])))
 
     @patterns.register(r'^0$')
     def _pattern_today(self, groups):
-        self.set_date(datetime.date.today())
+        self.set_date(today)
 
     @patterns.register(r'^([12][0-9]{3})-?[wW](0[1-9]|[1-4][0-9]|5[0-3])$')
     def _pattern_iso_week(self, groups):
@@ -179,7 +179,6 @@ class DayRange:
 
     @patterns.register(r'^[wW](0?[1-9]|[1-4][0-9]|5[0-3])$')
     def _pattern_w_ww(self, groups):
-        today = datetime.date.today()
         (today_year, today_week) = today.isocalendar()[0:2]
         week = int(groups[0])
 
@@ -196,13 +195,11 @@ class DayRange:
 
     @patterns.register(r'^[wW]-?0$')
     def _pattern_current_week(self, groups):
-        today = datetime.date.today()
         self.set_range(today - datetime.timedelta(today.weekday()),
                        today + datetime.timedelta(6 - today.weekday()))
 
     @patterns.register(r'^[wW]-([1-9][0-9]*)$')
     def _pattern_x_weeks_ago(self, groups):
-        today = datetime.date.today()
         start = today - datetime.timedelta(today.weekday() + 7 * int(groups[0]))
         self.set_range(start, start + datetime.timedelta(6))
 

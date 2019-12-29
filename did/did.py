@@ -54,9 +54,13 @@ def forward_slash_unescape(escaped):
 
 
 class DidApplication:
-    def __init__(self, cmdline_args):
+    def __init__(self, cmdline_args, now=None):
+        if now is None:
+            now = datetime.datetime.now()
+
         self.args = None
         self.cmdline_args = cmdline_args
+        self.now = now
 
     def run(self):
         self.parse_options()
@@ -73,8 +77,8 @@ class DidApplication:
         if 0 < len(self.args.current_task):
             self.append_event(" ".join(self.args.current_task))
         elif self.worklog.end():
-            if self.worklog.end().date() == datetime.date.today():
-                self.worklog.append_assumed_interval(datetime.datetime.now())
+            if self.worklog.end().date() == self.now.date():
+                self.worklog.append_assumed_interval(self.now)
 
         if self.args.categorized_report:
             self.apply_categorization()
@@ -218,13 +222,12 @@ class DidApplication:
                 name = last_work.name()
 
         writer = JobListWriter(self.args.logfile)
-        now = datetime.datetime.now()
-        writer.append(now, name)
-        self.worklog.append_log_event(now, name)
+        writer.append(self.now, name)
+        self.worklog.append_log_event(self.now, name)
 
 
-def main(cmdline_args=sys.argv):
-    app = DidApplication(cmdline_args)
+def main(cmdline_args=sys.argv, now=None):
+    app = DidApplication(cmdline_args, now)
     app.run()
 
 
