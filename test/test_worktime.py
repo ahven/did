@@ -20,7 +20,7 @@ Fifth Floor, Boston, MA  02110-1301  USA
 
 import unittest
 import datetime
-from did.worktime import WorkStatsFactory
+from did.worktime import WorkSessionStats, make_preset_accounting
 from did.WorkInterval import WorkInterval
 
 
@@ -78,8 +78,8 @@ class TestBasicSession(unittest.TestCase):
                is_workday):
         self.session = SessionMock(is_workday)
         self.append_intervals(intervals)
-        factory = WorkStatsFactory('PL')
-        stats = factory.new_session_stats(self.session)
+        accounting = make_preset_accounting('PL-computer')
+        stats = WorkSessionStats(self.session, accounting)
         expected_worktime = datetime.timedelta(0, expected_work_seconds)
         expected_breaktime = datetime.timedelta(0, expected_break_seconds)
 

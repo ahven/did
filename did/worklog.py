@@ -22,6 +22,7 @@ import datetime
 import re
 
 from did.WorkSession import WorkSession
+from did.worktime import make_preset_accounting, WorkSessionStats
 
 
 class FirstJobNotArriveError(Exception):
@@ -57,6 +58,7 @@ class WorkLog(object):
         self.sessions_ = []
         self.file_name = file_name
         self.filter_regex = filter_regex
+        self.accounting = make_preset_accounting('PL-computer')
 
         if isinstance(self.filter_regex, str):
             self.filter_regex = re.compile(self.filter_regex)
@@ -118,10 +120,10 @@ class WorkLog(object):
                 return last_work
         return None
 
-    def compute_stats(self, stats_factory):
+    def compute_stats(self):
         total_overtime = datetime.timedelta(0)
         for session in self.sessions_:
-            stats = stats_factory.new_session_stats(session)
+            stats = WorkSessionStats(session, self.accounting)
             total_overtime += stats.overhours()
             session.set_stats(stats)
             session.set_total_overtime(total_overtime)

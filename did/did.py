@@ -30,7 +30,6 @@ import subprocess
 import sys
 
 from did.worklog import WorkLog, JobListWriter
-from did.worktime import WorkStatsFactory
 from did.report import ChronologicalSessionDisplay, AggregateSessionDisplay, \
         AggregateRangeDisplay, ReportTimePercent
 from did.DayRange import DayRange
@@ -83,7 +82,7 @@ class DidApplication:
         if self.args.categorized_report:
             self.apply_categorization()
 
-        self.worklog.compute_stats(WorkStatsFactory("PL"))
+        self.worklog.compute_stats()
 
         if self.args.aggregate_range:
             cls = AggregateRangeDisplay

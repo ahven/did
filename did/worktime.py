@@ -17,6 +17,7 @@ You should have received a copy of the GNU General Public License along with
 Foobar; if not, write to the Free Software Foundation, Inc., 51 Franklin St,
 Fifth Floor, Boston, MA  02110-1301  USA
 """
+import copy
 import datetime
 from typing import Optional, List
 
@@ -55,50 +56,62 @@ class PaidBreakConfig:
         self.min_day_total_work_time = min_day_total_work_time
 
 
-class WorkStatsFactory(object):
-    """
-    classdocs
-    """
+class Accounting:
+    def __init__(self,
+                 daily_work_time: datetime.timedelta,
+                 break_configs: List[PaidBreakConfig]):
+        self.daily_work_time = daily_work_time
+        self.break_configs = break_configs
 
-    def __init__(self, country):
-        """
-        Constructor
-        """
-        self.country_ = country
 
-    def new_session_stats(self, session):
-        if self.country_ == "PL":
-            # Official work session stats in Poland.
-            #
-            # Breaks treated as worktime:
-            #  * 5 minutes of break ("computer break") after an hour of work.
-            #    Scaling down, but not up. So this effectively gives a break
-            #    lasting one twelfth of the recent work, but not longer than 5
-            #    minutes.
-            #  * One 15 minutes break per day ("breakfast break"), if the day
-            #    has at least 6 work hours.
-            daily_work_time = datetime.timedelta(hours=8)
-            break_configs = [
-                PaidBreakConfig(
-                    name="breakfast",
-                    duration=datetime.timedelta(minutes=15),
-                    max_occurrences_per_day=1,
-                    splittable=True,  # officially it's not, but...
-                    min_day_total_work_time=datetime.timedelta(
-                        hours=6)),
-                PaidBreakConfig(
-                    name="computer",
-                    duration=datetime.timedelta(minutes=5),
-                    max_occurrences_per_day=None,
-                    splittable=True,  # officially it's not, but...
-                    earned_after_preceding_work_time=datetime.timedelta(
-                        hours=1)),
-            ]
-        else:
-            daily_work_time = datetime.timedelta(hours=8)
-            break_configs = []
+class Preset:
+    def __init__(self, name: str, description: str, accounting: Accounting):
+        self.name = name
+        self.description = description
+        self.accounting = accounting
 
-        return WorkSessionStats(session, daily_work_time, break_configs)
+
+PRESETS = {preset.name: preset for preset in [
+    Preset('default',
+           "8 hours work per day, no paid breaks",
+           Accounting(
+               daily_work_time=datetime.timedelta(hours=8),
+               break_configs=[])
+           ),
+    Preset('PL-computer',
+           """Official work session stats in Poland.
+
+           Breaks treated as work time:
+             * 5 minutes of break ("computer break") after an hour of work.
+               Scaling down, but not up. So this effectively gives a break
+               lasting one twelfth of the recent work, but not longer than 5
+               minutes.
+             * One 15 minutes break per day ("breakfast break"), if the day
+               has at least 6 work hours.""",
+           Accounting(
+               daily_work_time=datetime.timedelta(hours=8),
+               break_configs=[
+                   PaidBreakConfig(
+                       name="breakfast",
+                       duration=datetime.timedelta(minutes=15),
+                       max_occurrences_per_day=1,
+                       splittable=True,  # officially it's not, but...
+                       min_day_total_work_time=datetime.timedelta(
+                           hours=6)),
+                   PaidBreakConfig(
+                       name="computer",
+                       duration=datetime.timedelta(minutes=5),
+                       max_occurrences_per_day=None,
+                       splittable=True,  # officially it's not, but...
+                       earned_after_preceding_work_time=datetime.timedelta(
+                           hours=1)),
+               ])
+           ),
+]}
+
+
+def make_preset_accounting(name: str):
+    return copy.deepcopy(PRESETS[name].accounting)
 
 
 class WorkSessionStats(object):
@@ -111,19 +124,18 @@ class WorkSessionStats(object):
     is extended proportionally for all work tasks in a session.
     """
 
-    def __init__(self, session, daily_work_time,
-                 break_configs: List[PaidBreakConfig]):
+    def __init__(self, session, accounting: Accounting):
         self.session_ = session
-        self.daily_work_time = daily_work_time
-        self.daily_break = None
-        self.computer_break = None  # type: PaidBreakConfig
+        self.accounting = accounting
+        self.daily_break = None  # type: Optional[PaidBreakConfig]
+        self.computer_break = None  # type: Optional[PaidBreakConfig]
         self.time_worked_ = datetime.timedelta(0)
         self.time_slacked_ = datetime.timedelta(0)
 
         self.break_seconds_counted_as_work = 0
         self.recent_work_seconds = 0
 
-        self._assign_breaks(break_configs)
+        self._assign_breaks(accounting.break_configs)
         if self.daily_break is not None and self.session_.is_workday():
             self.usable_daily_break_seconds = (
                     self.daily_break.duration.total_seconds() *
