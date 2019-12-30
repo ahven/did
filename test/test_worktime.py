@@ -20,12 +20,13 @@ Fifth Floor, Boston, MA  02110-1301  USA
 
 import unittest
 import datetime
-from did.worktime import WorkSessionStats, make_preset_accounting
+from did.worktime import WorkSessionStats, make_preset_accounting, Accounting
 from did.WorkInterval import WorkInterval
 
 
 class SessionMock:
-    def __init__(self, is_workday):
+    def __init__(self, accounting: Accounting, is_workday: bool):
+        self.accounting_ = accounting
         self.intervals_ = []
         self.is_workday_ = is_workday
 
@@ -39,6 +40,9 @@ class SessionMock:
             WorkInterval(start, end,
                          name='interval{}'.format(len(self.intervals_)),
                          is_break=is_break))
+
+    def accounting(self):
+        return self.accounting_
 
     def is_workday(self):
         return self.is_workday_
@@ -76,10 +80,10 @@ class TestBasicSession(unittest.TestCase):
 
     def verify_generic(self, intervals, expected_work_seconds, expected_break_seconds,
                is_workday):
-        self.session = SessionMock(is_workday)
-        self.append_intervals(intervals)
         accounting = make_preset_accounting('PL-computer')
-        stats = WorkSessionStats(self.session, accounting)
+        self.session = SessionMock(accounting, is_workday)
+        self.append_intervals(intervals)
+        stats = WorkSessionStats(self.session)
         expected_worktime = datetime.timedelta(0, expected_work_seconds)
         expected_breaktime = datetime.timedelta(0, expected_break_seconds)
 

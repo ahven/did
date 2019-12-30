@@ -1,8 +1,3 @@
-# from unittest import TestCase
-#
-#
-# class TestWorkLog(TestCase):
-#     pass
 import os
 import tempfile
 from contextlib import ExitStack as does_not_raise
@@ -12,23 +7,36 @@ import pytest
 
 from did.WorkSession import WorkSession
 from did.worklog import WorkLog, FirstJobNotArriveError, \
-    NonChronologicalOrderError
+    NonChronologicalOrderError, ConfigChangeDuringSessionError, InvalidLine
+from did.worktime import make_preset_accounting, Accounting
+
+default_accounting = make_preset_accounting('PL-computer')
+
+
+def custom_accounting(hours: int) -> Accounting:
+    accounting = default_accounting.clone()
+    accounting.daily_work_time = hours
+    return accounting
 
 
 @pytest.mark.parametrize(
     "file_contents,expectation",
     [("2019-02-20 09:02:03: arrive\n",
-      [WorkSession(start=datetime(2019, 2, 20, 9, 2, 3))]),
+      [WorkSession(start=datetime(2019, 2, 20, 9, 2, 3),
+                   accounting=default_accounting)]),
      ("2019-02-20 09:02:03: arrive ooo\n",
-      [WorkSession(start=datetime(2019, 2, 20, 9, 2, 3), is_workday=False)]),
+      [WorkSession(start=datetime(2019, 2, 20, 9, 2, 3),
+                   accounting=default_accounting, is_workday=False)]),
      ("2019-02-20 09:02:03: arrive\n"
       "2019-02-20 10:00:00: foo\n",
-      [WorkSession(start=datetime(2019, 2, 20, 9, 2, 3), events=[
+      [WorkSession(start=datetime(2019, 2, 20, 9, 2, 3),
+                   accounting=default_accounting, events=[
           (datetime(2019, 2, 20, 10, 0, 0), "foo")])]),
      ("2019-02-20 09:02:03: arrive\n"
       "2019-02-20 10:00:00: foo\n"
       "2019-02-20 10:20:55: .bar\n",
-      [WorkSession(start=datetime(2019, 2, 20, 9, 2, 3), events=[
+      [WorkSession(start=datetime(2019, 2, 20, 9, 2, 3),
+                   accounting=default_accounting, events=[
           (datetime(2019, 2, 20, 10, 0, 0), "foo"),
           (datetime(2019, 2, 20, 10, 20, 55), ".bar")])]),
      ("2019-02-20 09:02:03: foobar\n",
@@ -36,6 +44,20 @@ from did.worklog import WorkLog, FirstJobNotArriveError, \
      ("2019-02-20 09:02:03: arrive\n"
       "2019-02-20 07:03:00: arrive\n",
       NonChronologicalOrderError),
+     ("config daily_work_time = 6h\n"
+      "2019-02-20 09:02:03: arrive\n",
+      [WorkSession(start=datetime(2019, 2, 20, 9, 2, 3),
+                   accounting=custom_accounting(6))]),
+     ("2019-02-20 09:02:03: arrive\n"
+      "config daily_work_time = 6h\n",
+      [WorkSession(start=datetime(2019, 2, 20, 9, 2, 3),
+                   accounting=default_accounting)]),
+     ("2019-02-20 09:02:03: arrive\n"
+      "config daily_work_time = 6h\n"
+      "2019-02-20 10:00:00: foo\n",
+      ConfigChangeDuringSessionError),
+     ("foo\n",
+      InvalidLine),
      ])
 def test_reading(file_contents, expectation):
     if isinstance(expectation, type):

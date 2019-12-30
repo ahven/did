@@ -18,8 +18,10 @@ Foobar; if not, write to the Free Software Foundation, Inc., 51 Franklin St,
 Fifth Floor, Boston, MA  02110-1301  USA
 """
 import datetime
+from typing import Optional, re, List, Tuple
 
 from did.WorkInterval import WorkInterval
+from did.worktime import Accounting
 
 
 class WorkSession(object):
@@ -27,7 +29,12 @@ class WorkSession(object):
     classdocs
     """
 
-    def __init__(self, start, is_workday=True, filter_regex=None, events=[]):
+    def __init__(self,
+                 start: datetime.datetime,
+                 accounting: Accounting,
+                 is_workday: bool = True,
+                 filter_regex: Optional[re] = None,
+                 events: List[Tuple[datetime.datetime, str]] = []):
         """
         start - When the day starts
 
@@ -35,6 +42,7 @@ class WorkSession(object):
             False if this complete session is overhours
         """
         self.start_ = start
+        self.accounting_ = accounting
         self.is_workday_ = is_workday
         self.intervals_ = []
         self.filter_regex_ = filter_regex
@@ -99,6 +107,9 @@ class WorkSession(object):
 
     def start(self):
         return self.start_
+
+    def accounting(self):
+        return self.accounting_
 
     def end(self):
         if len(self.intervals_) == 0:

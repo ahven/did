@@ -22,8 +22,19 @@ import datetime
 import re
 from typing import List
 
+from pytimeparse.timeparse import timeparse
+
 from did.WorkSession import WorkSession
 from did.worktime import make_preset_accounting, WorkSessionStats
+
+
+def parse_timedelta(time_expression: str) -> datetime.timedelta:
+    seconds = timeparse(time_expression)
+    if seconds is None:
+        raise ValueError("Invalid time interval expression: {}"
+                         .format(time_expression))
+    else:
+        return datetime.timedelta(seconds=seconds)
 
 
 class FirstJobNotArriveError(Exception):
@@ -46,6 +57,17 @@ class NonChronologicalOrderError(Exception):
         self.appended_datetime = appended
 
 
+class InvalidParameter(Exception):
+    def __init__(self, param_name):
+        super().__init__("Invalid parameter name: {}".format(param_name))
+
+
+class ConfigChangeDuringSessionError(Exception):
+    def __init__(self):
+        super().__init__("Config parameters can't be changed while the session "
+                         "is still running. Move it right before an 'arrive'.")
+
+
 class WorkLog(object):
     """
     A WorkLog keeps all information throughout the whole history.
@@ -64,8 +86,32 @@ class WorkLog(object):
         if isinstance(self.filter_regex, str):
             self.filter_regex = re.compile(self.filter_regex)
 
-        for dt, text in job_reader(file_name):
-            self.append_log_event(dt, text)
+        self._load_from_file(file_name)
+
+    def _load_from_file(self, file_name):
+        current_session_is_closed = False
+
+        for line_number, parsed_line in enumerate(job_reader(file_name),
+                                                  start=1):
+            try:
+                if isinstance(parsed_line, Event):
+                    num_sessions = len(self.sessions_)
+                    self.append_log_event(parsed_line.timestamp, parsed_line.text)
+                    if (current_session_is_closed and
+                            num_sessions == len(self.sessions_)):
+                        # Something was appended to the current session,
+                        # even though it has already been closed.
+                        raise ConfigChangeDuringSessionError()
+                    current_session_is_closed = False
+                elif isinstance(parsed_line, SetParam):
+                    self.set_parameter(parsed_line.name, parsed_line.value)
+                    current_session_is_closed = True
+                else:
+                    Exception('Unhandled parsed line: {}'.format(parsed_line))
+            except Exception as e:
+                print("Error while parsing file \"{}\", line {}:"
+                      .format(file_name, line_number))
+                raise e
 
     def _check_chronology(self, datetime):
         end = self.end()
@@ -84,13 +130,21 @@ class WorkLog(object):
         self._check_chronology(datetime)
 
         if text == "arrive":
-            self.sessions_.append(WorkSession(datetime, True, self.filter_regex))
+            self.sessions_.append(WorkSession(datetime, self.accounting.clone(),
+                                              True, self.filter_regex))
         elif text == "arrive ooo":
-            self.sessions_.append(WorkSession(datetime, False, self.filter_regex))
+            self.sessions_.append(WorkSession(datetime, self.accounting.clone(),
+                                              False, self.filter_regex))
         else:
             if len(self.sessions_) == 0:
                 raise FirstJobNotArriveError()
             self.sessions_[-1].append_log_event(datetime, text)
+
+    def set_parameter(self, name, value):
+        if name == 'daily_work_time':
+            self.accounting.daily_work_time = parse_timedelta(value)
+        else:
+            raise InvalidParameter(value)
 
     def append_assumed_interval(self, datetime):
         self._check_chronology(datetime)
@@ -124,7 +178,7 @@ class WorkLog(object):
     def compute_stats(self):
         total_overtime = datetime.timedelta(0)
         for session in self.sessions_:
-            stats = WorkSessionStats(session, self.accounting)
+            stats = WorkSessionStats(session)
             total_overtime += stats.overhours()
             session.set_stats(stats)
             session.set_total_overtime(total_overtime)
@@ -147,6 +201,12 @@ class Event:
     def __init__(self, timestamp: datetime.timedelta, text: str):
         self.timestamp = timestamp
         self.text = text
+
+
+class SetParam:
+    def __init__(self, name, value):
+        self.name = name
+        self.value = value
 
 
 class InvalidLine(Exception):
@@ -186,6 +246,12 @@ class Parser:
         del match
         return None
 
+    @line_parsers.register(r"config\s+([a-z_][a-z0-9_]*)\s*=\s*(.*)$")
+    def _set_config_param(self, match):
+        name = match.group(1)
+        value = match.group(2).strip()
+        return SetParam(name, value)
+
     def process_line(self, line):
         for line_parser in self.line_parsers.line_parsers:
             match = line_parser.match(line)
@@ -206,10 +272,7 @@ def job_reader(path):
             for line in f:
                 result = parser.process_line(line)
                 if result is not None:
-                    yield result.timestamp, result.text
-    except NonChronologicalOrderError as err:
-        print("Error: Non-chronological entries: appending", \
-                err.appended_datetime, "after", err.last_datetime)
+                    yield result
     except IOError as err:
         print("Error opening/reading from file '{0}': {1}".format(
                 err.filename, err.strerror))

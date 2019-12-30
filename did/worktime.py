@@ -63,6 +63,9 @@ class Accounting:
         self.daily_work_time = daily_work_time
         self.break_configs = break_configs
 
+    def clone(self):
+        return copy.deepcopy(self)
+
 
 class Preset:
     def __init__(self, name: str, description: str, accounting: Accounting):
@@ -110,8 +113,8 @@ PRESETS = {preset.name: preset for preset in [
 ]}
 
 
-def make_preset_accounting(name: str):
-    return copy.deepcopy(PRESETS[name].accounting)
+def make_preset_accounting(name: str) -> Accounting:
+    return PRESETS[name].accounting.clone()
 
 
 class WorkSessionStats(object):
@@ -124,9 +127,8 @@ class WorkSessionStats(object):
     is extended proportionally for all work tasks in a session.
     """
 
-    def __init__(self, session, accounting: Accounting):
+    def __init__(self, session):
         self.session_ = session
-        self.accounting = accounting
         self.daily_break = None  # type: Optional[PaidBreakConfig]
         self.computer_break = None  # type: Optional[PaidBreakConfig]
         self.time_worked_ = datetime.timedelta(0)
@@ -135,7 +137,7 @@ class WorkSessionStats(object):
         self.break_seconds_counted_as_work = 0
         self.recent_work_seconds = 0
 
-        self._assign_breaks(accounting.break_configs)
+        self._assign_breaks(self.session_.accounting().break_configs)
         if self.daily_break is not None and self.session_.is_workday():
             self.usable_daily_break_seconds = (
                     self.daily_break.duration.total_seconds() *
@@ -258,6 +260,6 @@ class WorkSessionStats(object):
 
     def expected_work_time(self):
         if self.session_.is_workday():
-            return self.accounting.daily_work_time
+            return self.session_.accounting().daily_work_time
         else:
             return datetime.timedelta(0)

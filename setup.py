@@ -7,7 +7,7 @@ setup(
    author='Michał Czuczman',
    # author_email='',
    packages=['did'],
-   install_requires=['pytest'],
+   install_requires=['pytest', 'pytimeparse'],
    entry_points = {
         'console_scripts': ['did=did.did:main'],
    },

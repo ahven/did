@@ -71,3 +71,17 @@ Otherwise an error is thrown.
 2019-12-17 16:32:37: team meeting
 2019-12-17 17:37:02: coding project-foo
 ```
+
+## Configuration
+
+### Length of the working day
+
+Must be set right before a session starts (i.e. preceding an "arrive"). Examples:
+```
+config daily_work_time = 8h
+config daily_work_time = 6h
+config daily_work_time = 3h20m
+```
+
+This can be set multiple times in the log file. Each settings is valid for all 
+the sessions until a next setting comes.
