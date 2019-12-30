@@ -142,23 +142,23 @@ def job_reader(path):
     pattern = r"(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2})(?::(\d{2}))?: (.+)$"
     rx = re.compile(pattern)
     try:
-        f = open(path, "r")
-        for line in f:
-            m = rx.match(line)
-            if m:
-                parts = list(m.groups())
-                text = parts.pop()
-                for i in range(len(parts)):
-                    if parts[i] is None:
-                        parts[i] = 0
-                    else:
-                        parts[i] = int(parts[i])
-                year, month, day, hour, minute, second = parts
-                dt = datetime.datetime(
-                        year, month, day, hour, minute, second)
-                yield dt, text
-            elif not re.match(r"#|\s*$", line):
-                raise Exception("Invalid line", line)
+        with open(path, "r") as f:
+            for line in f:
+                m = rx.match(line)
+                if m:
+                    parts = list(m.groups())
+                    text = parts.pop()
+                    for i in range(len(parts)):
+                        if parts[i] is None:
+                            parts[i] = 0
+                        else:
+                            parts[i] = int(parts[i])
+                    year, month, day, hour, minute, second = parts
+                    dt = datetime.datetime(
+                            year, month, day, hour, minute, second)
+                    yield dt, text
+                elif not re.match(r"#|\s*$", line):
+                    raise Exception("Invalid line", line)
     except NonChronologicalOrderError as err:
         print("Error: Non-chronological entries: appending", \
                 err.appended_datetime, "after", err.last_datetime)
@@ -173,10 +173,10 @@ class JobListWriter:
 
     def append(self, date, name):
         try:
-            f = open(self.filename, "a")
-            f.write("%d-%02d-%02d %02d:%02d:%02d: %s\n" %
-                    (date.year, date.month, date.day,
-                     date.hour, date.minute, date.second, name))
+            with open(self.filename, "a") as f:
+                f.write("%d-%02d-%02d %02d:%02d:%02d: %s\n" %
+                        (date.year, date.month, date.day,
+                         date.hour, date.minute, date.second, name))
         except IOError as err:
             print("Error opening/writing to file '{0}': {1}".format(
                                                     err.filename, err.strerror))

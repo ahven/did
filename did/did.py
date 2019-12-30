@@ -102,19 +102,19 @@ class DidApplication:
         filename = self.get_config_dir() + "/categorization"
         rx = re.compile("^s/((?:[^\\\\/]|\\\\.)+)/((?:[^\\\\/]|\\\\.)*)/\\s*$")
         try:
-            f = open(filename, "r")
-            for line in f:
-                if re.match("^\\s*(#|$)", line):
-                    continue
-                m = rx.match(line)
-                if not m:
-                    print("Invalid line in categorization file \"%s\": %s" \
-                            % (filename, line))
-                    sys.exit(1)
-                pattern = forward_slash_unescape(m.group(1))
-                subst = forward_slash_unescape(m.group(2))
-                cat_rx = re.compile(pattern)
-                self.worklog.map_names(lambda x: cat_rx.sub(subst, x))
+            with open(filename, "r") as f:
+                for line in f:
+                    if re.match("^\\s*(#|$)", line):
+                        continue
+                    m = rx.match(line)
+                    if not m:
+                        print("Invalid line in categorization file \"%s\": %s"
+                              % (filename, line))
+                        sys.exit(1)
+                    pattern = forward_slash_unescape(m.group(1))
+                    subst = forward_slash_unescape(m.group(2))
+                    cat_rx = re.compile(pattern)
+                    self.worklog.map_names(lambda x: cat_rx.sub(subst, x))
 
         except IOError as err:
             print("Error opening/reading from file '{0}': {1}".format(
