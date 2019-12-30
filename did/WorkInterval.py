@@ -40,6 +40,21 @@ class WorkInterval(object):
         self.is_break_ = is_break if is_break is not None else self.name_is_break(self.name_)
         self.accounted_break_seconds_ = 0
 
+    def __repr__(self):
+        return ('WorkInterval(start="{}", end="{}", name={}, is_assumed={}, '
+                'is_selected={}, is_break={})'
+                .format(self.start_, self.end_, repr(self.name_),
+                        self.is_assumed_, self.is_selected_, self.is_break_))
+
+    def __eq__(self, other: 'WorkInterval'):
+        return (self.start_ == other.start_ and
+                self.end_ == other.end_ and
+                self.name_ == other.name_ and
+                self.is_assumed_ == other.is_assumed_ and
+                self.is_selected_ == other.is_selected_ and
+                self.is_break_ == other.is_break_ and
+                self.accounted_break_seconds_ == other.accounted_break_seconds_)
+
     def is_break(self):
         return self.is_break_
 
@@ -83,4 +98,4 @@ class WorkInterval(object):
     @staticmethod
     def name_is_break(name):
         # Break names start with a "." or contain "**"
-        return re.match("\\.", name) or re.search("\\*\\*", name)
+        return bool(re.match("\\.", name) or re.search("\\*\\*", name))

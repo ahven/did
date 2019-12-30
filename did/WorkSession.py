@@ -27,7 +27,7 @@ class WorkSession(object):
     classdocs
     """
 
-    def __init__(self, start, is_workday=True, filter_regex=None):
+    def __init__(self, start, is_workday=True, filter_regex=None, events=[]):
         """
         start - When the day starts
 
@@ -38,6 +38,21 @@ class WorkSession(object):
         self.is_workday_ = is_workday
         self.intervals_ = []
         self.filter_regex_ = filter_regex
+
+        for timestamp, event in events:
+            self.append_log_event(timestamp, event)
+
+    def __eq__(self, other: 'WorkSession'):
+        return (self.start_ == other.start_ and
+                self.is_workday_ == other.is_workday_ and
+                self.intervals_ == other.intervals_ and
+                self.filter_regex_ == other.filter_regex_)
+
+    def __repr__(self):
+        return ('WorkSession(start="{}", is_workday={}, filter_regex={}, '
+                'intervals={})'
+                .format(self.start_, self.is_workday_, repr(self.filter_regex_),
+                        self.intervals_))
 
     def append_log_event(self, datetime, text):
         self.intervals_.append(WorkInterval(
