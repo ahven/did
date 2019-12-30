@@ -225,7 +225,7 @@ class DidApplication:
         self.worklog.append_log_event(self.now, name)
 
 
-def main(cmdline_args=sys.argv, now=None):
+def main(cmdline_args=sys.argv[1:], now=None):
     app = DidApplication(cmdline_args, now)
     app.run()
 
