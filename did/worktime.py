@@ -182,7 +182,7 @@ class WorkSessionStats(object):
 
         if self.computer_break is not None:
             used_computer_break_seconds = min(self._legal_break_seconds(),
-                                           duration_seconds)
+                                              duration_seconds)
             duration_seconds -= used_computer_break_seconds
             interval.account_work_duration(used_computer_break_seconds)
             self.add_work_seconds(used_computer_break_seconds)
@@ -192,7 +192,7 @@ class WorkSessionStats(object):
 
         if self.daily_break is not None:
             used_daily_break_seconds = min(self.usable_daily_break_seconds,
-                                          duration_seconds)
+                                           duration_seconds)
             self.usable_daily_break_seconds -= used_daily_break_seconds
             duration_seconds -= used_daily_break_seconds
             interval.account_work_duration(used_daily_break_seconds)
