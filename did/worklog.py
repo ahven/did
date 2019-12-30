@@ -20,6 +20,7 @@ Fifth Floor, Boston, MA  02110-1301  USA
 
 import datetime
 import re
+from typing import List
 
 from did.WorkSession import WorkSession
 from did.worktime import make_preset_accounting, WorkSessionStats
@@ -133,32 +134,79 @@ class WorkLog(object):
             session.map_names(func)
 
 
+class LineParser:
+    def __init__(self, pattern, action):
+        self.regex = re.compile(pattern)
+        self.action = action
+
+    def match(self, line):
+        return self.regex.match(line)
+
+
+class Event:
+    def __init__(self, timestamp: datetime.timedelta, text: str):
+        self.timestamp = timestamp
+        self.text = text
+
+
+class InvalidLine(Exception):
+    pass
+
+
+class LineParserRegistry:
+    def __init__(self):
+        self.line_parsers = []  # type: List[LineParser]
+
+    def register(self, pattern):
+        def wrap(func):
+            self.line_parsers.append(LineParser(pattern, func))
+            return func
+        return wrap
+
+
+class Parser:
+    line_parsers = LineParserRegistry()
+
+    @line_parsers.register(
+        r"(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2})(?::(\d{2}))?: (.+)$")
+    def _event_line(self, match):
+        parts = list(match.groups())
+        text = parts.pop()
+        for i in range(len(parts)):
+            if parts[i] is None:
+                parts[i] = 0
+            else:
+                parts[i] = int(parts[i])
+        year, month, day, hour, minute, second = parts
+        dt = datetime.datetime(year, month, day, hour, minute, second)
+        return Event(dt, text)
+
+    @line_parsers.register(r"#|\s*$")
+    def _ignore_line(self, match):
+        del match
+        return None
+
+    def process_line(self, line):
+        for line_parser in self.line_parsers.line_parsers:
+            match = line_parser.match(line)
+            if match:
+                return line_parser.action(self, match)
+        raise InvalidLine("Invalid line: {}".format(line))
+
+
 def job_reader(path):
     """
     Generator reading lines from a work log file.
 
     In each iteration the generator returns a (datetime, text) tuple.
     """
-    pattern = r"(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2})(?::(\d{2}))?: (.+)$"
-    rx = re.compile(pattern)
     try:
         with open(path, "r") as f:
+            parser = Parser()
             for line in f:
-                m = rx.match(line)
-                if m:
-                    parts = list(m.groups())
-                    text = parts.pop()
-                    for i in range(len(parts)):
-                        if parts[i] is None:
-                            parts[i] = 0
-                        else:
-                            parts[i] = int(parts[i])
-                    year, month, day, hour, minute, second = parts
-                    dt = datetime.datetime(
-                            year, month, day, hour, minute, second)
-                    yield dt, text
-                elif not re.match(r"#|\s*$", line):
-                    raise Exception("Invalid line", line)
+                result = parser.process_line(line)
+                if result is not None:
+                    yield result.timestamp, result.text
     except NonChronologicalOrderError as err:
         print("Error: Non-chronological entries: appending", \
                 err.appended_datetime, "after", err.last_datetime)
