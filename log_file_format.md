@@ -52,6 +52,9 @@ Break tasks have names starting with the dot character (`.`), e.g. `.lunch`.
 For compatibility with GTimeLog it's also accepted to have two consecutive
 asterisks identified as a break, e.g. `lunch **`
 
+All the events in the file must be ordered chronologically.
+Otherwise an error is thrown.
+
 ## Complete day example
 
 ```
