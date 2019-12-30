@@ -18,6 +18,41 @@ Foobar; if not, write to the Free Software Foundation, Inc., 51 Franklin St,
 Fifth Floor, Boston, MA  02110-1301  USA
 """
 import datetime
+from typing import Optional, List
+
+
+class UnsupportedBreakConfig(Exception):
+    pass
+
+
+class PaidBreakConfig:
+    def __init__(self,
+                 name: str,
+                 duration: datetime.timedelta,
+                 max_occurrences_per_day: Optional[int],
+                 splittable: bool,
+                 earned_after_preceding_work_time: Optional[
+                     datetime.timedelta] = None,
+                 min_day_total_work_time: Optional[datetime.timedelta] = None):
+        """
+        Definition of a kind of paid breaks.
+        :param name: The name, an identifier.
+        :param duration: Duration of the break.
+        :param max_occurrences_per_day: The maximum number of times the break
+           may occur in one a day. None indicates there is no limit.
+        :param splittable: False if the break counts only if it's in one chunk.
+           True if the break might be split into multiple chunks.
+        :param earned_after_preceding_work_time: Minimum length of preceding
+           work time required to earn the break. None means no limit.
+        :param min_day_total_work_time: Minimum total length of all work time
+           in a given day to be able to earn the break in a day.
+        """
+        self.name = name
+        self.duration = duration
+        self.max_occurrences_per_day = max_occurrences_per_day
+        self.splittable = splittable
+        self.earned_after_preceding_work_time = earned_after_preceding_work_time
+        self.min_day_total_work_time = min_day_total_work_time
 
 
 class WorkStatsFactory(object):
@@ -33,29 +68,160 @@ class WorkStatsFactory(object):
 
     def new_session_stats(self, session):
         if self.country_ == "PL":
-            return PolishWorkSessionStats(session)
+            # Official work session stats in Poland.
+            #
+            # Breaks treated as worktime:
+            #  * 5 minutes of break ("computer break") after an hour of work.
+            #    Scaling down, but not up. So this effectively gives a break
+            #    lasting one twelfth of the recent work, but not longer than 5
+            #    minutes.
+            #  * One 15 minutes break per day ("breakfast break"), if the day
+            #    has at least 6 work hours.
+            daily_work_time = datetime.timedelta(hours=8)
+            break_configs = [
+                PaidBreakConfig(
+                    name="breakfast",
+                    duration=datetime.timedelta(minutes=15),
+                    max_occurrences_per_day=1,
+                    splittable=True,  # officially it's not, but...
+                    min_day_total_work_time=datetime.timedelta(
+                        hours=6)),
+                PaidBreakConfig(
+                    name="computer",
+                    duration=datetime.timedelta(minutes=5),
+                    max_occurrences_per_day=None,
+                    splittable=True,  # officially it's not, but...
+                    earned_after_preceding_work_time=datetime.timedelta(
+                        hours=1)),
+            ]
         else:
-            return WorkSessionStats(session)
+            daily_work_time = datetime.timedelta(hours=8)
+            break_configs = []
+
+        return WorkSessionStats(session, daily_work_time, break_configs)
 
 
 class WorkSessionStats(object):
     """
-    Count total work time and break time for a WorkSession
+    Count total work time and break time for a WorkSession, accounting for paid
+    breaks treated as work time.
+
+    The "adjusted duration" of breaks is decreased to exclude the time that
+    is treated as work time.  In return, the "adjusted duration" of work jobs
+    is extended proportionally for all work tasks in a session.
     """
 
-    def __init__(self, session):
+    def __init__(self, session, daily_work_time,
+                 break_configs: List[PaidBreakConfig]):
         self.session_ = session
+        self.daily_work_time = daily_work_time
+        self.daily_break = None
+        self.computer_break = None  # type: PaidBreakConfig
         self.time_worked_ = datetime.timedelta(0)
         self.time_slacked_ = datetime.timedelta(0)
-        self._analyze()
 
-    def _analyze(self):
+        self.break_seconds_counted_as_work = 0
+        self.recent_work_seconds = 0
+
+        self._assign_breaks(break_configs)
+        if self.daily_break is not None and self.session_.is_workday():
+            self.usable_daily_break_seconds = (
+                    self.daily_break.duration.total_seconds() *
+                    self.daily_break.max_occurrences_per_day)
+        else:
+            self.usable_daily_break_seconds = 0
+
+        real_work_seconds = 0
+
         for interval in self.session_.intervals():
-            duration = interval.end() - interval.start()
             if interval.is_break():
-                self.add_break_time(duration)
+                self._analyze_break(interval)
             else:
-                self.add_work_time(duration)
+                duration = interval.end() - interval.start()
+                self._analyze_work(duration.total_seconds())
+                real_work_seconds += duration.total_seconds()
+
+        for interval in self.session_.intervals():
+            if not interval.is_break():
+                interval.account_break_duration(
+                    self.break_seconds_counted_as_work
+                    * interval.real_duration().total_seconds()
+                    / real_work_seconds)
+
+    def _assign_breaks(self, break_configs):
+        for break_config in break_configs:
+            if not break_config.splittable:
+                raise UnsupportedBreakConfig(
+                    "Sorry, non-splittable breaks are not supported yet")
+
+            if break_config.max_occurrences_per_day is None:
+                if break_config.min_day_total_work_time is not None:
+                    raise UnsupportedBreakConfig(
+                        "Sorry, min_day_total_work_time is not yet supported "
+                        "with computer breaks")
+                if self.computer_break is not None:
+                    raise UnsupportedBreakConfig(
+                        "Sorry, only at most one computer break is supported")
+                self.computer_break = break_config
+            else:
+                if break_config.max_occurrences_per_day != 1:
+                    raise UnsupportedBreakConfig(
+                        "Sorry, only one occurrence of the daily break is "
+                        "supported now")
+                if break_config.earned_after_preceding_work_time is not None:
+                    raise UnsupportedBreakConfig(
+                        "Sorry, earned_after_preceding_work_time is not yet "
+                        "supported with daily breaks")
+                if self.daily_break is not None:
+                    raise UnsupportedBreakConfig(
+                        "Sorry, only at most one daily break is supported")
+                self.daily_break = break_config
+
+    def _analyze_break(self, interval):
+        duration_seconds = interval.real_duration().total_seconds()
+
+        if self.computer_break is not None:
+            used_computer_break_seconds = min(self._legal_break_seconds(),
+                                           duration_seconds)
+            duration_seconds -= used_computer_break_seconds
+            interval.account_work_duration(used_computer_break_seconds)
+            self.add_work_seconds(used_computer_break_seconds)
+            self.break_seconds_counted_as_work += used_computer_break_seconds
+            self.recent_work_seconds -= (
+                    used_computer_break_seconds / self._computer_break_scale())
+
+        if self.daily_break is not None:
+            used_daily_break_seconds = min(self.usable_daily_break_seconds,
+                                          duration_seconds)
+            self.usable_daily_break_seconds -= used_daily_break_seconds
+            duration_seconds -= used_daily_break_seconds
+            interval.account_work_duration(used_daily_break_seconds)
+            self.add_work_seconds(used_daily_break_seconds)
+            self.break_seconds_counted_as_work += used_daily_break_seconds
+
+        self.add_break_seconds(duration_seconds)
+
+    def _legal_break_seconds(self):
+        if self.computer_break is not None:
+            computer_break_after_seconds = (
+                self.computer_break.earned_after_preceding_work_time
+                    .total_seconds())
+            # Cap to maximum (e.g. to one hour)
+            if self.recent_work_seconds > computer_break_after_seconds:
+                self.recent_work_seconds = computer_break_after_seconds
+
+            return self.recent_work_seconds * self._computer_break_scale()
+        else:
+            return 0
+
+    def _computer_break_scale(self):
+        return (1.0 * self.computer_break.duration.total_seconds() /
+                self.computer_break.earned_after_preceding_work_time
+                .total_seconds())
+
+    def _analyze_work(self, duration_seconds):
+        self.add_work_seconds(duration_seconds)
+        self.recent_work_seconds += duration_seconds
 
     def add_work_time(self, duration):
         self.time_worked_ += duration
@@ -84,94 +250,3 @@ class WorkSessionStats(object):
         else:
             seconds = 0
         return datetime.timedelta(0, seconds)
-
-
-class PolishWorkSessionStats(WorkSessionStats):
-    """
-    Count official work session stats in Poland.
-
-    Breaks treated as worktime:
-     * 5 minutes of break ("computer break") after an hour of work. Scaling
-       down, but not up.  So this effectively gives a break lasting one twelfth
-       of the recent work, but not longer than 5 minutes.
-     * One 15 minutes break per day, if the day has at least 6 work hours.
-
-    The "adjusted duration" of breaks is decreased to exclude the time that
-    is treated as work time.  In return, the "adjusted duration" of work jobs
-    is extended proportionally for all work tasks in a session.
-    """
-
-    short_break_after_seconds = 60 * 60   # Make a break after one hour
-    short_break_duration_seconds = 5 * 60 # The break lasts 5 minutes
-    long_break_seconds = 15 * 60          # 15-minutes break
-#    daily_work_seconds = 8 * 60 * 60      # 8 hours of work per day
-
-
-    def __init__(self, session):
-        """
-        :param session:
-        """
-        self.break_seconds_counted_as_work = 0
-        super().__init__(session)
-
-    def _computer_break_scale(self):
-        return 1.0 * self.short_break_duration_seconds \
-                / self.short_break_after_seconds
-
-    def _legal_break_seconds(self):
-        # One hour maximum
-        if self.recent_work_seconds > self.short_break_after_seconds:
-            self.recent_work_seconds = self.short_break_after_seconds
-
-        return self.recent_work_seconds * self._computer_break_scale()
-
-    def _analyze_break(self, interval):
-        duration_seconds = interval.real_duration().total_seconds()
-
-        used_short_break_seconds = min(
-                self._legal_break_seconds(), duration_seconds)
-        used_long_break_seconds = min(
-                self.usable_long_break_seconds,
-                duration_seconds - used_short_break_seconds)
-
-        interval.account_work_duration(
-                used_short_break_seconds + used_long_break_seconds)
-        self.add_work_seconds(
-                used_short_break_seconds + used_long_break_seconds)
-        self.add_break_seconds(
-                duration_seconds
-                - used_short_break_seconds - used_long_break_seconds)
-
-        self.break_seconds_counted_as_work += (
-                used_short_break_seconds + used_long_break_seconds)
-        self.recent_work_seconds -= \
-                used_short_break_seconds / self._computer_break_scale()
-        self.usable_long_break_seconds -= used_long_break_seconds
-
-    def _analyze_work(self, duration_seconds):
-        self.add_work_seconds(duration_seconds)
-        self.recent_work_seconds += duration_seconds
-
-    def _analyze(self):
-        self.recent_work_seconds = 0
-        if self.session_.is_workday():
-            self.usable_long_break_seconds = self.long_break_seconds
-        else:
-            self.usable_long_break_seconds = 0
-
-        real_work_seconds = 0
-
-        for interval in self.session_.intervals():
-            if interval.is_break():
-                self._analyze_break(interval)
-            else:
-                duration = interval.end() - interval.start()
-                self._analyze_work(duration.total_seconds())
-                real_work_seconds += duration.total_seconds()
-
-        for interval in self.session_.intervals():
-            if not interval.is_break():
-                interval.account_break_duration(
-                        self.break_seconds_counted_as_work
-                        * interval.real_duration().total_seconds()
-                        / real_work_seconds)

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Copyright (C) 2012 Michał Czuczman
+Copyright (C) 2012-2019 Michał Czuczman
 
 This file is part of Did.
 
@@ -20,7 +20,7 @@ Fifth Floor, Boston, MA  02110-1301  USA
 
 import unittest
 import datetime
-from did.worktime import PolishWorkSessionStats
+from did.worktime import WorkStatsFactory
 from did.WorkInterval import WorkInterval
 
 
@@ -52,7 +52,6 @@ class SessionMock:
 
 class TestBasicSession(unittest.TestCase):
 
-
     def setUp(self):
         pass
 
@@ -79,7 +78,8 @@ class TestBasicSession(unittest.TestCase):
                is_workday):
         self.session = SessionMock(is_workday)
         self.append_intervals(intervals)
-        stats = PolishWorkSessionStats(self.session)
+        factory = WorkStatsFactory('PL')
+        stats = factory.new_session_stats(self.session)
         expected_worktime = datetime.timedelta(0, expected_work_seconds)
         expected_breaktime = datetime.timedelta(0, expected_break_seconds)
 
