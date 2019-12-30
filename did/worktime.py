@@ -258,7 +258,6 @@ class WorkSessionStats(object):
 
     def expected_work_time(self):
         if self.session_.is_workday():
-            seconds = 8 * 60 * 60
+            return self.accounting.daily_work_time
         else:
-            seconds = 0
-        return datetime.timedelta(0, seconds)
+            return datetime.timedelta(0)
