@@ -28,10 +28,10 @@ class UnsupportedBreakConfig(Exception):
 
 class PaidBreakConfig:
     def __init__(self,
-                 name: str,
-                 duration: datetime.timedelta,
-                 max_occurrences_per_day: Optional[int],
-                 splittable: bool,
+                 name: Optional[str] = None,
+                 duration: Optional[datetime.timedelta] = None,
+                 max_occurrences_per_day: Optional[int] = None,
+                 splittable: Optional[bool] = None,
                  earned_after_preceding_work_time: Optional[
                      datetime.timedelta] = None,
                  min_day_total_work_time: Optional[datetime.timedelta] = None):
@@ -47,6 +47,10 @@ class PaidBreakConfig:
            work time required to earn the break. None means no limit.
         :param min_day_total_work_time: Minimum total length of all work time
            in a given day to be able to earn the break in a day.
+
+        None is allowed for "name", "duration" and "splittable" only to simplify
+        parsing, but actually they are required to be non-None, so they must be
+        later set to proper values.
         """
         self.name = name
         self.duration = duration
@@ -65,6 +69,25 @@ class Accounting:
 
     def clone(self):
         return copy.deepcopy(self)
+
+    def _find_break(self, name: str) -> Optional[int]:
+        for index, break_config in enumerate(self.break_configs):
+            if break_config.name == name:
+                return index
+        return None
+
+    def delete_break(self, name: str):
+        index = self._find_break(name)
+        if index is None:
+            raise ValueError("Break \"{}\" doesn't exist".format(name))
+        del self.break_configs[index]
+
+    def set_break(self, break_config: PaidBreakConfig):
+        index = self._find_break(break_config.name)
+        if index is None:
+            self.break_configs.append(break_config)
+        else:
+            self.break_configs[index] = break_config
 
 
 class Preset:

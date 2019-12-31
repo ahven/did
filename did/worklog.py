@@ -20,12 +20,14 @@ Fifth Floor, Boston, MA  02110-1301  USA
 
 import datetime
 import re
+import shlex
 from typing import List
 
 from pytimeparse.timeparse import timeparse
 
 from did.WorkSession import WorkSession
-from did.worktime import make_preset_accounting, WorkSessionStats
+from did.worktime import make_preset_accounting, WorkSessionStats, \
+    PaidBreakConfig
 
 
 def parse_timedelta(time_expression: str) -> datetime.timedelta:
@@ -106,8 +108,14 @@ class WorkLog(object):
                 elif isinstance(parsed_line, SetParam):
                     self.set_parameter(parsed_line.name, parsed_line.value)
                     current_session_is_closed = True
+                elif isinstance(parsed_line, PaidBreakConfig):
+                    self.accounting.set_break(parsed_line)
+                    current_session_is_closed = True
+                elif isinstance(parsed_line, DeletePaidBreak):
+                    self.accounting.delete_break(parsed_line.name)
+                    current_session_is_closed = True
                 else:
-                    Exception('Unhandled parsed line: {}'.format(parsed_line))
+                    raise AssertionError('Unhandled parsed line: {}'.format(parsed_line))
             except Exception as e:
                 print("Error while parsing file \"{}\", line {}:"
                       .format(file_name, line_number))
@@ -144,7 +152,7 @@ class WorkLog(object):
         if name == 'daily_work_time':
             self.accounting.daily_work_time = parse_timedelta(value)
         else:
-            raise InvalidParameter(value)
+            raise InvalidParameter(name)
 
     def append_assumed_interval(self, datetime):
         self._check_chronology(datetime)
@@ -209,8 +217,18 @@ class SetParam:
         self.value = value
 
 
+class DeletePaidBreak:
+    def __init__(self, name):
+        self.name = name
+
+
 class InvalidLine(Exception):
     pass
+
+
+class PaidBreakParseError(InvalidLine):
+    def __init__(self, message):
+        super().__init__('Error in \"config paid_break\": {}'.format(message))
 
 
 class LineParserRegistry:
@@ -251,6 +269,62 @@ class Parser:
         name = match.group(1)
         value = match.group(2).strip()
         return SetParam(name, value)
+
+    @line_parsers.register(r"config\s+paid_break\s+(.*)")
+    def _paid_break_config(self, match):
+        args = shlex.split(match.group(1))
+        if len(args) == 0:
+            raise PaidBreakParseError("No arguments")
+
+        paid_break = PaidBreakConfig(name=args.pop(0))
+
+        def set_uniquely(attr, new_value):
+            if getattr(paid_break, attr) is not None:
+                raise PaidBreakParseError(
+                    "Repeated setting of {} (to {} and {})"
+                    .format(attr, repr(getattr(paid_break, attr)),
+                            repr(new_value)))
+            setattr(paid_break, attr, new_value)
+
+        if len(args) == 0:
+            raise PaidBreakParseError("Too little arguments")
+
+        if args[0] == 'delete':
+            if len(args) > 1:
+                raise PaidBreakParseError("Extra arguments")
+            return DeletePaidBreak(paid_break.name)
+
+        for arg in args:
+            if arg == 'daily':
+                set_uniquely("max_occurrences_per_day", 1)
+            elif arg == 'splittable':
+                set_uniquely("splittable", True)
+            elif arg == 'one_chunk':
+                set_uniquely("splittable", False)
+            elif '=' in arg:
+                variable, value = arg.split('=', maxsplit=1)
+                if variable == 'min_day_work_time':
+                    set_uniquely("min_day_total_work_time",
+                                 parse_timedelta(value))
+                elif variable == 'earn_work_time':
+                    set_uniquely("earned_after_preceding_work_time",
+                                 parse_timedelta(value))
+                else:
+                    raise PaidBreakParseError('Not recognized parameter "{}"'
+                                              .format(variable))
+            else:
+                try:
+                    set_uniquely("duration", parse_timedelta(arg))
+                except ValueError:
+                    raise PaidBreakParseError("Not recognized argument \"{}\""
+                                              .format(arg))
+
+        if paid_break.duration is None:
+            raise PaidBreakParseError("Missing setting of duration")
+        if paid_break.splittable is None:
+            raise PaidBreakParseError("Missing setting of \"splittable\" or "
+                                      "\"one_chunk\"")
+        return paid_break
 
     def process_line(self, line):
         for line_parser in self.line_parsers.line_parsers:

@@ -85,3 +85,19 @@ config daily_work_time = 3h20m
 
 This can be set multiple times in the log file. Each settings is valid for all 
 the sessions until a next setting comes.
+
+### Daily breaks
+
+Must be set right before a session starts (i.e. not in the middle of a session). Examples:
+```
+config paid_break "lunch" 15m daily splittable min_day_work_time=6h
+config paid_break "screentime" 5m earn_work_time=1h splittable
+config paid_break "screentime" 5m earn_work_time=1h one_chunk
+config paid_break "lunch" delete
+config paid_break "screentime" delete
+```
+
+Multiple breaks can be set at the same time. Each break has a unique name.
+It's possible to modify a break by reusing the same name.
+It's also possible to delete a break, so that it won't exist any more.
+All the break tasks (tasks with)
