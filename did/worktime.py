@@ -196,6 +196,10 @@ class WorkSessionStats(object):
                     raise UnsupportedBreakConfig(
                         "Sorry, min_day_total_work_time is not yet supported "
                         "with computer breaks")
+                if break_config.earned_after_preceding_work_time is None:
+                    raise UnsupportedBreakConfig(
+                        "Sorry, earn_work_time is required for non-\"daily\" "
+                        "breaks")
                 if self.computer_break is not None:
                     raise UnsupportedBreakConfig(
                         "Sorry, only at most one computer break is supported")
