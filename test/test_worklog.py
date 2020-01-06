@@ -31,10 +31,10 @@ def custom_accounting(hours: Optional[int] = None,
 def verify_reading(file_contents, expectation):
     if isinstance(expectation, type):
         context_manager = pytest.raises(expectation)
-        expected_sessions = None
+        should_verify_sessions = False
     else:
         context_manager = does_not_raise()
-        expected_sessions = expectation
+        should_verify_sessions = True
 
     with context_manager:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -44,7 +44,8 @@ def verify_reading(file_contents, expectation):
 
             work_log = WorkLog(log_file_path)
 
-            assert expected_sessions == work_log.sessions()
+            if should_verify_sessions:
+                assert expectation == work_log.sessions()
 
 
 @pytest.mark.parametrize(
