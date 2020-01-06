@@ -9,7 +9,7 @@ import pytest
 from did.WorkSession import WorkSession
 from did.worklog import WorkLog, FirstJobNotArriveError, \
     NonChronologicalOrderError, ConfigChangeDuringSessionError, InvalidLine, \
-    PaidBreakParseError, InvalidParameter
+    PaidBreakParseError, InvalidParameter, MultipleSessionsInOneDayError
 from did.worktime import make_preset_accounting, Accounting, PaidBreakConfig
 
 default_accounting = make_preset_accounting('PL-computer')
@@ -150,4 +150,26 @@ def test_config_daily_work_time_parsing(file_contents, expectation):
                    accounting=default_accounting)]),
      ])
 def test_config_paid_break_parsing(file_contents, expectation):
+    verify_reading(file_contents, expectation)
+
+
+@pytest.mark.parametrize(
+    "file_contents,expectation",
+    [("2019-02-20 09:02:03: arrive\n"
+      "2019-02-20 10:02:03: arrive\n",
+      MultipleSessionsInOneDayError),
+     ("2019-02-20 09:02:03: arrive ooo\n"
+      "2019-02-20 10:02:03: arrive\n",
+      [WorkSession(start=datetime(2019, 2, 20, 9, 2, 3),
+                   accounting=default_accounting, is_workday=False),
+       WorkSession(start=datetime(2019, 2, 20, 10, 2, 3),
+                   accounting=default_accounting, is_workday=True)]),
+     ("2019-02-20 09:02:03: arrive\n"
+      "2019-02-20 10:02:03: arrive ooo\n",
+      [WorkSession(start=datetime(2019, 2, 20, 9, 2, 3),
+                   accounting=default_accounting, is_workday=True),
+       WorkSession(start=datetime(2019, 2, 20, 10, 2, 3),
+                   accounting=default_accounting, is_workday=False)]),
+     ])
+def test_only_one_arrive_per_day(file_contents, expectation):
     verify_reading(file_contents, expectation)

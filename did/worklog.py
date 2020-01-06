@@ -70,6 +70,11 @@ class ConfigChangeDuringSessionError(Exception):
                          "is still running. Move it right before an 'arrive'.")
 
 
+class MultipleSessionsInOneDayError(Exception):
+    def __init__(self, date: datetime.date):
+        super().__init__("Multiple sessions start on {}".format(date))
+
+
 class WorkLog(object):
     """
     A WorkLog keeps all information throughout the whole history.
@@ -81,6 +86,7 @@ class WorkLog(object):
         Constructor
         """
         self.sessions_ = []
+        self.last_work_session_start_date = None
         self.file_name = file_name
         self.filter_regex = filter_regex
         self.accounting = make_preset_accounting('PL-computer')
@@ -138,6 +144,11 @@ class WorkLog(object):
         self._check_chronology(datetime)
 
         if text == "arrive":
+            if self.last_work_session_start_date is not None:
+                if datetime.date() == self.last_work_session_start_date:
+                    raise MultipleSessionsInOneDayError(
+                        self.last_work_session_start_date)
+            self.last_work_session_start_date = datetime.date()
             self.sessions_.append(WorkSession(datetime, self.accounting.clone(),
                                               True, self.filter_regex))
         elif text == "arrive ooo":
