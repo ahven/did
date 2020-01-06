@@ -75,6 +75,12 @@ class MultipleSessionsInOneDayError(Exception):
         super().__init__("Multiple sessions start on {}".format(date))
 
 
+class TooLongSessionError(Exception):
+    def __init__(self, date: datetime.date, max_duration: datetime.timedelta):
+        super().__init__("The session on {} is longer than the maximum session "
+                         "length (equal to {})".format(date, max_duration))
+
+
 class WorkLog(object):
     """
     A WorkLog keeps all information throughout the whole history.
@@ -90,6 +96,7 @@ class WorkLog(object):
         self.file_name = file_name
         self.filter_regex = filter_regex
         self.accounting = make_preset_accounting('PL-computer')
+        self.max_session_length = datetime.timedelta(days=1)
 
         if isinstance(self.filter_regex, str):
             self.filter_regex = re.compile(self.filter_regex)
@@ -157,7 +164,11 @@ class WorkLog(object):
         else:
             if len(self.sessions_) == 0:
                 raise FirstJobNotArriveError()
-            self.sessions_[-1].append_log_event(datetime, text)
+            session = self.sessions_[-1]
+            if session.start() + self.max_session_length < datetime:
+                raise TooLongSessionError(session.start().date(),
+                                          self.max_session_length)
+            session.append_log_event(datetime, text)
 
     def set_parameter(self, name, value):
         if name == 'daily_work_time':
