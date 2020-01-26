@@ -1,5 +1,5 @@
 import tempfile
-from contextlib import ExitStack as does_not_raise
+from contextlib import ExitStack as does_not_raise, contextmanager
 from datetime import datetime
 from pathlib import Path
 from typing import List, Tuple, Union
@@ -8,6 +8,24 @@ import pytest
 
 from did import did, DayRange
 from did.worklog import FirstJobNotArriveError
+
+
+def run_did(job_log_file_path: Path,
+            args: List[str],
+            fake_time_str: str = None):
+    if fake_time_str is not None:
+        fake_now = datetime.strptime(fake_time_str, '%Y-%m-%d %H:%M:%S')
+        true_today = DayRange.today
+        DayRange.today = fake_now.date()
+    else:
+        fake_now = None
+
+    try:
+        did.main(cmdline_args=['--log-file', str(job_log_file_path), *args],
+                 now=fake_now)
+    finally:
+        if fake_time_str is not None:
+            DayRange.today = true_today
 
 
 def test_create_job_log_file_if_doesnt_exist():
@@ -20,7 +38,7 @@ def test_create_job_log_file_if_doesnt_exist():
         assert not subdir_path.exists()
         assert not job_log_file_path.exists()
 
-        did.main(['--log-file', str(job_log_file_path), 'arrive'])
+        run_did(job_log_file_path, ['arrive'])
 
         assert subdir_path.exists()
         assert job_log_file_path.exists()
@@ -67,11 +85,7 @@ def test_resulting_log(times_with_args: List[Tuple[str, str]],
             assert not job_log_file_path.exists()
 
             for time_str, args in times_with_args:
-                fake_now = datetime.strptime(time_str, '%Y-%m-%d %H:%M:%S')
-                DayRange.today = fake_now.date()
-                did.main(cmdline_args=['--log-file', str(job_log_file_path),
-                                       *args],
-                         now=fake_now)
+                run_did(job_log_file_path, args, time_str)
 
             assert subdir_path.exists()
             assert job_log_file_path.exists()
@@ -83,3 +97,12 @@ def test_resulting_log(times_with_args: List[Tuple[str, str]],
             else:
                 # TODO: The file shouldn't be created in the first place
                 pass
+
+
+def test_range_report_negative_days():
+    with tempfile.TemporaryDirectory() as temp_dir:
+        job_log_file_path = Path(temp_dir, 'job_log')
+        run_did(job_log_file_path, ["arrive"], "2019-02-15 09:02:00")
+        # This used to cause exit(2) with the following message:
+        # "error: argument -r/--range: expected one argument"
+        run_did(job_log_file_path, ["-r", "-30.."], "2019-02-16 08:50:00")

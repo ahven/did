@@ -29,6 +29,7 @@ import re
 import subprocess
 import sys
 
+from did.argument_parser import ArgumentParser
 from did.worklog import WorkLog, JobListWriter
 from did.report import ChronologicalSessionDisplay, AggregateSessionDisplay, \
         AggregateRangeDisplay, ReportTimePercent
@@ -121,7 +122,7 @@ class DidApplication:
                     err.filename, err.strerror))
 
     def parse_options(self):
-        parser = argparse.ArgumentParser(
+        parser = ArgumentParser(
             description='Command-line time tracking tool',
             usage='%(prog)s [options] [CURRENT-TASK]')
         parser.add_argument("-f", "--log-file",
