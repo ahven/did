@@ -121,6 +121,10 @@ class Display:
     def print_header(self):
         pass
 
+    def print_content(self):
+        """This method must be overridden in a subclass"""
+        raise NotImplementedError()
+
     def print_footer(self):
         print()
         if self.worklog.has_filter():
@@ -131,6 +135,10 @@ class Display:
                 self.overall_stats_unit.to_string(self.total_work_time),
                 self.overall_stats_unit.to_string(self.total_break_time),
                 self.overall_stats_unit.to_string(self.total_overtime)))
+
+    def append_session(self, session):
+        """This method must be overridden in a subclass"""
+        raise NotImplementedError()
 
 
 class SessionDisplay(Display):
@@ -161,6 +169,10 @@ class SessionDisplay(Display):
             print("  (Out of office)", end=' ')
         print(Attributes.reset)
 
+    def print_session_content(self, session):
+        """This method must be overridden in a subclass"""
+        raise NotImplementedError()
+
     def print_matched_jobs_footer(self, session):
         print("  Matched: Work %-6s   Break %-6s" % (
                 self.matched_stats_unit.to_string(session.matched_work_time(self.adjusted)),
@@ -169,7 +181,7 @@ class SessionDisplay(Display):
     def print_session_footer(self, session):
         work_time = session.stats().time_worked()
         break_time = session.stats().time_slacked()
-        overtime = session.stats().overhours();
+        overtime = session.stats().overhours()
 
         print("  Worktime %-6s   Slacktime %-6s   Overtime %-6s (running total %s)" % (
                     self.overall_stats_unit.to_string(work_time),
