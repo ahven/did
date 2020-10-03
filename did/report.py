@@ -100,7 +100,7 @@ class Display:
         self.matched_work_time = datetime.timedelta(0)
         self.matched_break_time = datetime.timedelta(0)
         for session in worklog.sessions():
-            if self.day_range.contains(session.start.date()):
+            if session.start.date() in self.day_range:
                 self.append_session(session)
                 self.total_work_time += session.stats().time_worked()
                 self.total_break_time += session.stats().time_slacked()

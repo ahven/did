@@ -91,42 +91,38 @@ class DayRange:
     patterns = PatternDecoratorDispatcher()
 
     def __init__(self, range_specs):
-        """
-        Constructor
-        """
-        self.set_range_text(range_specs)
-
-    def first_day(self):
-        return self._first
-
-    def last_day(self):
-        return self._last
-
-    def is_valid(self):
-        return self._first <= self._last
-
-    def set_range_text(self, range_specs):
         try:
             if not DayRange.patterns.dispatch(self, range_specs):
                 raise InvalidRangeFormatError(range_specs)
         except ValueError:
             raise InvalidRangeFormatError(range_specs)
 
-    def set_range(self, first, last):
+    @property
+    def first_day(self):
+        return self._first
+
+    @property
+    def last_day(self):
+        return self._last
+
+    def __contains__(self, date):
+        """Check if the given date belongs to this day range (inclusive)"""
+        return self._first <= date <= self._last
+
+    def _init_range(self, first, last):
+        """Initialize the day range with a pair of days (first and last)"""
         self._first = first
         self._last = last
 
-    def set_date(self, date):
+    def _init_date(self, date):
+        """Initialize the day range to a single day"""
         self._first = date
         self._last = date
-
-    def contains(self, date):
-        return self._first <= date and date <= self._last
 
     @patterns.register(
             r'^([12][0-9]{3})(-?)(0[1-9]|1[012])\2(0[1-9]|[12][0-9]|3[01])$')
     def _pattern_yyyy_mm_dd(self, groups):
-        self.set_date(
+        self._init_date(
                 datetime.date(int(groups[0]), int(groups[2]), int(groups[3])))
 
     @patterns.register(r'^(0?[1-9]|1[012])-(0[1-9]|[12][0-9]|3[01])$')
@@ -141,7 +137,7 @@ class DayRange:
             # Month-day is today or less.  Use the current year.
             year = today.year
 
-        self.set_date(datetime.date(year, month, day))
+        self._init_date(datetime.date(year, month, day))
 
     @patterns.register(r'^(0?[1-9]|[12][0-9]|3[01])$')
     def _pattern_dd(self, groups):
@@ -155,25 +151,25 @@ class DayRange:
                 month = 12
                 year = year - 1
 
-        self.set_date(datetime.date(year, month, day))
+        self._init_date(datetime.date(year, month, day))
 
     @patterns.register(
             r'^([12][0-9]{3})(-?)[wW](0[1-9]|[1-4][0-9]|5[0-3])\2([1-7])')
     def _pattern_iso_week_date(self, groups):
-        self.set_date(iso_to_gregorian(
+        self._init_date(iso_to_gregorian(
                     int(groups[0]), int(groups[2]), int(groups[3])))
 
     @patterns.register(r'^-(0|[1-9][0-9]*)$')
     def _pattern_x_days_ago(self, groups):
-        self.set_date(today - datetime.timedelta(int(groups[0])))
+        self._init_date(today - datetime.timedelta(int(groups[0])))
 
     @patterns.register(r'^0$')
     def _pattern_today(self, groups):
-        self.set_date(today)
+        self._init_date(today)
 
     @patterns.register(r'^([12][0-9]{3})-?[wW](0[1-9]|[1-4][0-9]|5[0-3])$')
     def _pattern_iso_week(self, groups):
-        self.set_range(
+        self._init_range(
                 iso_to_gregorian(int(groups[0]), int(groups[1]), 1),
                 iso_to_gregorian(int(groups[0]), int(groups[1]), 7))
 
@@ -189,19 +185,19 @@ class DayRange:
             # Week is current week in this year or less.  Use the current year.
             year = today_year
 
-        self.set_range(
+        self._init_range(
                 iso_to_gregorian(year, week, 1),
                 iso_to_gregorian(year, week, 7))
 
     @patterns.register(r'^[wW]-?0$')
     def _pattern_current_week(self, groups):
-        self.set_range(today - datetime.timedelta(today.weekday()),
-                       today + datetime.timedelta(6 - today.weekday()))
+        self._init_range(today - datetime.timedelta(today.weekday()),
+                         today + datetime.timedelta(6 - today.weekday()))
 
     @patterns.register(r'^[wW]-([1-9][0-9]*)$')
     def _pattern_x_weeks_ago(self, groups):
         start = today - datetime.timedelta(today.weekday() + 7 * int(groups[0]))
-        self.set_range(start, start + datetime.timedelta(6))
+        self._init_range(start, start + datetime.timedelta(6))
 
     @patterns.register(
             r'^([12][0-9]{3})-(0?[1-9]|1[012])$')
@@ -216,13 +212,13 @@ class DayRange:
         start = datetime.date(year, month, 1)
         end = datetime.date(next_months_year, next_month, 1) \
                 - datetime.timedelta(1)
-        self.set_range(start, end)
+        self._init_range(start, end)
 
     @patterns.register(r'^(2[0-9]{3})$')
     def _pattern_yyyy(self, groups):
         year = int(groups[0])
-        self.set_range(datetime.date(year, 1, 1),
-                       datetime.date(year, 12, 31))
+        self._init_range(datetime.date(year, 1, 1),
+                         datetime.date(year, 12, 31))
 
     @patterns.register(r'^([^.]*)\.\.([^.]*)$')
     def _pattern_first_last(self, groups):

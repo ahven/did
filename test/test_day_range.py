@@ -5,7 +5,7 @@ Created on 2012-06-29
 """
 import unittest
 import datetime
-from did.DayRange import DayRange, InvalidRangeFormatError
+from did.day_range import DayRange, InvalidRangeFormatError
 
 def d(year, month, day):
     return datetime.date(year, month, day)
@@ -15,8 +15,8 @@ class DayRangeTest(unittest.TestCase):
 
     def verify(self, text, expected_first, expected_last):
         day_range = DayRange(text)
-        self.assertEqual(day_range.first_day(), expected_first)
-        self.assertEqual(day_range.last_day(), expected_last)
+        self.assertEqual(day_range.first_day, expected_first)
+        self.assertEqual(day_range.last_day, expected_last)
 
     def verifyOne(self, text, expected):
         self.verify(text, expected, expected)
@@ -28,8 +28,8 @@ class DayRangeTest(unittest.TestCase):
     def verifySameOutput(self, text1, text2):
         day_range1 = DayRange(text1)
         day_range2 = DayRange(text2)
-        self.assertEqual(day_range1.first_day(), day_range2.first_day())
-        self.assertEqual(day_range1.last_day(), day_range2.last_day())
+        self.assertEqual(day_range1.first_day, day_range2.first_day)
+        self.assertEqual(day_range1.last_day, day_range2.last_day)
 
     def verifyInvalid(self, text):
         self.assertRaises(InvalidRangeFormatError, DayRange, text)

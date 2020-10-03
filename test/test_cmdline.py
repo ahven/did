@@ -6,7 +6,7 @@ from typing import List, Tuple, Union
 
 import pytest
 
-from did import did, DayRange
+from did import did, day_range
 from did.worklog import FirstJobNotArriveError
 
 
@@ -15,8 +15,8 @@ def run_did(job_log_file_path: Path,
             fake_time_str: str = None):
     if fake_time_str is not None:
         fake_now = datetime.strptime(fake_time_str, '%Y-%m-%d %H:%M:%S')
-        true_today = DayRange.today
-        DayRange.today = fake_now.date()
+        true_today = day_range.today
+        day_range.today = fake_now.date()
     else:
         fake_now = None
 
@@ -25,7 +25,7 @@ def run_did(job_log_file_path: Path,
                  now=fake_now)
     finally:
         if fake_time_str is not None:
-            DayRange.today = true_today
+            day_range.today = true_today
 
 
 def test_create_job_log_file_if_doesnt_exist():

@@ -33,7 +33,7 @@ from did.argument_parser import ArgumentParser
 from did.worklog import WorkLog, JobListWriter
 from did.report import ChronologicalSessionDisplay, AggregateSessionDisplay, \
         AggregateRangeDisplay, ReportTimePercent
-from did.DayRange import DayRange
+from did.day_range import DayRange
 
 
 def forward_slash_unescape(escaped):
