@@ -32,50 +32,50 @@ class WorkInterval(object):
         """
         Constructor
         """
-        self.start_ = start
-        self.end_ = end
-        self.name_ = name
-        self.is_assumed_ = is_assumed
-        self.is_selected_ = is_selected
-        self.is_break_ = is_break if is_break is not None else self.name_is_break(self.name_)
-        self.accounted_break_seconds_ = 0
+        self._start = start
+        self._end = end
+        self._name = name
+        self._is_assumed = is_assumed
+        self._is_selected = is_selected
+        self._is_break = is_break if is_break is not None else self.name_is_break(self._name)
+        self._accounted_break_seconds = 0
 
     def __repr__(self):
         return ('WorkInterval(start="{}", end="{}", name={}, is_assumed={}, '
                 'is_selected={}, is_break={})'
-                .format(self.start_, self.end_, repr(self.name_),
-                        self.is_assumed_, self.is_selected_, self.is_break_))
+                .format(self._start, self._end, repr(self._name),
+                        self._is_assumed, self._is_selected, self._is_break))
 
     def __eq__(self, other: 'WorkInterval'):
-        return (self.start_ == other.start_ and
-                self.end_ == other.end_ and
-                self.name_ == other.name_ and
-                self.is_assumed_ == other.is_assumed_ and
-                self.is_selected_ == other.is_selected_ and
-                self.is_break_ == other.is_break_ and
-                self.accounted_break_seconds_ == other.accounted_break_seconds_)
+        return (self._start == other._start and
+                self._end == other._end and
+                self._name == other._name and
+                self._is_assumed == other._is_assumed and
+                self._is_selected == other._is_selected and
+                self._is_break == other._is_break and
+                self._accounted_break_seconds == other._accounted_break_seconds)
 
     def is_break(self):
-        return self.is_break_
+        return self._is_break
 
     def is_assumed(self):
-        return self.is_assumed_
+        return self._is_assumed
 
     def is_selected(self):
-        return self.is_selected_
+        return self._is_selected
 
     def start(self):
-        return self.start_
+        return self._start
 
     def end(self):
-        return self.end_
+        return self._end
 
     def real_duration(self):
-        return self.end_ - self.start_
+        return self._end - self._start
 
     def adjusted_duration(self):
-        return (self.end_ - self.start_
-                + datetime.timedelta(seconds=self.accounted_break_seconds_))
+        return (self._end - self._start
+                + datetime.timedelta(seconds=self._accounted_break_seconds))
 
     def duration(self, adjusted):
         if adjusted:
@@ -84,16 +84,16 @@ class WorkInterval(object):
             return self.real_duration()
 
     def account_break_duration(self, seconds):
-        self.accounted_break_seconds_ += seconds
+        self._accounted_break_seconds += seconds
 
     def account_work_duration(self, seconds):
-        self.accounted_break_seconds_ -= seconds
+        self._accounted_break_seconds -= seconds
 
     def name(self):
-        return self.name_
+        return self._name
 
     def set_name(self, name):
-        self.name_ = name
+        self._name = name
 
     @staticmethod
     def name_is_break(name):

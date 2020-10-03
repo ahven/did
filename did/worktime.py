@@ -151,17 +151,17 @@ class WorkSessionStats(object):
     """
 
     def __init__(self, session):
-        self.session_ = session
+        self._session = session
         self.daily_break = None  # type: Optional[PaidBreakConfig]
         self.computer_break = None  # type: Optional[PaidBreakConfig]
-        self.time_worked_ = datetime.timedelta(0)
-        self.time_slacked_ = datetime.timedelta(0)
+        self._time_worked = datetime.timedelta(0)
+        self._time_slacked = datetime.timedelta(0)
 
         self.break_seconds_counted_as_work = 0
         self.recent_work_seconds = 0
 
-        self._assign_breaks(self.session_.accounting().break_configs)
-        if self.daily_break is not None and self.session_.is_workday():
+        self._assign_breaks(self._session.accounting().break_configs)
+        if self.daily_break is not None and self._session.is_workday():
             self.usable_daily_break_seconds = (
                     self.daily_break.duration.total_seconds() *
                     self.daily_break.max_occurrences_per_day)
@@ -170,7 +170,7 @@ class WorkSessionStats(object):
 
         real_work_seconds = 0
 
-        for interval in self.session_.intervals():
+        for interval in self._session.intervals():
             if interval.is_break():
                 self._analyze_break(interval)
             else:
@@ -178,7 +178,7 @@ class WorkSessionStats(object):
                 self._analyze_work(duration.total_seconds())
                 real_work_seconds += duration.total_seconds()
 
-        for interval in self.session_.intervals():
+        for interval in self._session.intervals():
             if not interval.is_break():
                 interval.account_break_duration(
                     self.break_seconds_counted_as_work
@@ -265,10 +265,10 @@ class WorkSessionStats(object):
         self.recent_work_seconds += duration_seconds
 
     def add_work_time(self, duration):
-        self.time_worked_ += duration
+        self._time_worked += duration
 
     def add_break_time(self, duration):
-        self.time_slacked_ += duration
+        self._time_slacked += duration
 
     def add_work_seconds(self, seconds):
         self.add_work_time(datetime.timedelta(0, seconds))
@@ -277,16 +277,16 @@ class WorkSessionStats(object):
         self.add_break_time(datetime.timedelta(0, seconds))
 
     def time_worked(self):
-        return self.time_worked_
+        return self._time_worked
 
     def time_slacked(self):
-        return self.time_slacked_
+        return self._time_slacked
 
     def overhours(self):
-        return self.time_worked_ - self.expected_work_time()
+        return self._time_worked - self.expected_work_time()
 
     def expected_work_time(self):
-        if self.session_.is_workday():
-            return self.session_.accounting().daily_work_time
+        if self._session.is_workday():
+            return self._session.accounting().daily_work_time
         else:
             return datetime.timedelta(0)
