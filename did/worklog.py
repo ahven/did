@@ -25,7 +25,7 @@ from typing import List
 
 from pytimeparse.timeparse import timeparse
 
-from did.WorkSession import WorkSession
+from did.session import WorkSession
 from did.worktime import make_preset_accounting, WorkSessionStats, \
     PaidBreakConfig
 

@@ -6,7 +6,7 @@ from typing import List, Optional
 
 import pytest
 
-from did.WorkSession import WorkSession
+from did.session import WorkSession
 from did.worklog import WorkLog, FirstJobNotArriveError, \
     NonChronologicalOrderError, ConfigChangeDuringSessionError, InvalidLine, \
     PaidBreakParseError, InvalidParameter, MultipleSessionsInOneDayError, \

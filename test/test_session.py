@@ -1,7 +1,7 @@
 from datetime import datetime
 from unittest import TestCase
 
-from did.WorkSession import WorkSession
+from did.session import WorkSession
 from did.worktime import make_preset_accounting
 
 
