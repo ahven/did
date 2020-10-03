@@ -21,7 +21,7 @@ Fifth Floor, Boston, MA  02110-1301  USA
 import unittest
 import datetime
 from did.worktime import WorkSessionStats, make_preset_accounting, Accounting
-from did.WorkInterval import WorkInterval
+from did.interval import Interval
 
 
 class SessionMock:
@@ -37,9 +37,9 @@ class SessionMock:
         start = self._end()
         end = start + datetime.timedelta(0, seconds)
         self.intervals_.append(
-            WorkInterval(start, end,
-                         name='interval{}'.format(len(self.intervals_)),
-                         is_break=is_break))
+            Interval(start, end,
+                     name='interval{}'.format(len(self.intervals_)),
+                     is_break=is_break))
 
     def accounting(self):
         return self.accounting_
@@ -51,7 +51,7 @@ class SessionMock:
         if len(self.intervals_) == 0:
             return datetime.datetime(2012, 1, 4, 8, 0, 0)
         else:
-            return self.intervals_[-1].end()
+            return self.intervals_[-1].end
 
 
 class TestBasicSession(unittest.TestCase):

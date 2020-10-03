@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Copyright (C) 2012 Michał Czuczman
+Copyright (C) 2012-2020 Michał Czuczman
 
 This file is part of Did.
 
@@ -18,55 +18,64 @@ Foobar; if not, write to the Free Software Foundation, Inc., 51 Franklin St,
 Fifth Floor, Boston, MA  02110-1301  USA
 """
 
-import re
-
 import datetime
+from typing import Optional
 
 
-class WorkInterval(object):
+def interval_name_denotes_a_break(name: str) -> bool:
+    """Break names start with a "." or contain "**"."""
+    return name.startswith(".") or "**" in name
+
+
+class Interval:
+    """The smallest unit of tracking time during which one activity was
+    performed.
     """
-    classdocs
-    """
 
-    def __init__(self, start, end, name, is_assumed=False, is_selected=True, is_break=None):
-        """
-        Constructor
+    def __init__(self,
+                 start: datetime.datetime,
+                 end: datetime.datetime,
+                 name: str,
+                 is_assumed: bool = False,
+                 is_selected: bool = True,
+                 is_break: Optional[bool] = None):
+        """Make a new interval.
+
+        If "is_break" is not provided explicitly, then it will be inferred
+        from the name, treating this interval as a break in cases when the name
+        starts with a "." or if it contains "**".
         """
         self._start = start
         self._end = end
-        self._name = name
-        self._is_assumed = is_assumed
-        self._is_selected = is_selected
-        self._is_break = is_break if is_break is not None else self.name_is_break(self._name)
+        self.name = name
+        self.is_assumed = is_assumed
+        self.is_selected = is_selected
         self._accounted_break_seconds = 0
+        if is_break is not None:
+            self.is_break = is_break
+        else:
+            self.is_break = interval_name_denotes_a_break(self.name)
 
     def __repr__(self):
-        return ('WorkInterval(start="{}", end="{}", name={}, is_assumed={}, '
+        return ('Interval(start="{}", end="{}", name={}, is_assumed={}, '
                 'is_selected={}, is_break={})'
-                .format(self._start, self._end, repr(self._name),
-                        self._is_assumed, self._is_selected, self._is_break))
+                .format(self._start, self._end, repr(self.name),
+                        self.is_assumed, self.is_selected, self.is_break))
 
-    def __eq__(self, other: 'WorkInterval'):
+    def __eq__(self, other: 'Interval'):
         return (self._start == other._start and
                 self._end == other._end and
-                self._name == other._name and
-                self._is_assumed == other._is_assumed and
-                self._is_selected == other._is_selected and
-                self._is_break == other._is_break and
+                self.name == other.name and
+                self.is_assumed == other.is_assumed and
+                self.is_selected == other.is_selected and
+                self.is_break == other.is_break and
                 self._accounted_break_seconds == other._accounted_break_seconds)
 
-    def is_break(self):
-        return self._is_break
-
-    def is_assumed(self):
-        return self._is_assumed
-
-    def is_selected(self):
-        return self._is_selected
-
+    @property
     def start(self):
         return self._start
 
+    @property
     def end(self):
         return self._end
 
@@ -88,14 +97,3 @@ class WorkInterval(object):
 
     def account_work_duration(self, seconds):
         self._accounted_break_seconds -= seconds
-
-    def name(self):
-        return self._name
-
-    def set_name(self, name):
-        self._name = name
-
-    @staticmethod
-    def name_is_break(name):
-        # Break names start with a "." or contain "**"
-        return bool(re.match("\\.", name) or re.search("\\*\\*", name))

@@ -212,14 +212,14 @@ class DidApplication:
             if last_break is None:
                 name = ".break"
             else:
-                name = last_break.name()
+                name = last_break.name
         elif name == ",":
             # Last work interval
             last_work = self.worklog.last_work_interval()
             if last_work is None:
                 name = "work"
             else:
-                name = last_work.name()
+                name = last_work.name
 
         writer = JobListWriter(self.args.logfile)
         writer.append(self.now, name)

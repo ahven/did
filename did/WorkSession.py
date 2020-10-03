@@ -20,7 +20,7 @@ Fifth Floor, Boston, MA  02110-1301  USA
 import datetime
 from typing import Optional, re, List, Tuple
 
-from did.WorkInterval import WorkInterval
+from did.interval import Interval
 from did.worktime import Accounting
 
 
@@ -63,15 +63,15 @@ class WorkSession(object):
                         self._intervals))
 
     def append_log_event(self, datetime, text):
-        self._intervals.append(WorkInterval(
-                self.end(), datetime, text, False, self._is_matched(text)))
+        self._intervals.append(Interval(
+                self.end, datetime, text, False, self._is_matched(text)))
 
     def append_assumed_interval(self, datetime):
         if len(self._intervals) > 0:
-            name = self._intervals[-1].name()
+            name = self._intervals[-1].name
             self._intervals.append(
-                    WorkInterval(
-                        self.end(), datetime, name, True, self._is_matched(name)))
+                    Interval(
+                        self.end, datetime, name, True, self._is_matched(name)))
 
     def set_filter_regex(self, regex):
         self._filter_regex = regex
@@ -81,7 +81,7 @@ class WorkSession(object):
 
     def has_matched_jobs(self):
         for interval in self._intervals:
-            if interval.is_selected():
+            if interval.is_selected:
                 return True
         return False
 
@@ -94,28 +94,30 @@ class WorkSession(object):
     def matched_work_time(self, adjusted):
         duration = datetime.timedelta(0)
         for interval in self._intervals:
-            if interval.is_selected() and not interval.is_break():
+            if interval.is_selected and not interval.is_break:
                 duration += interval.duration(adjusted)
         return duration
 
     def matched_break_time(self, adjusted):
         duration = datetime.timedelta(0)
         for interval in self._intervals:
-            if interval.is_selected() and interval.is_break():
+            if interval.is_selected and interval.is_break:
                 duration += interval.duration(adjusted)
         return duration
 
+    @property
     def start(self):
         return self._start
 
     def accounting(self):
         return self._accounting
 
+    @property
     def end(self):
         if len(self._intervals) == 0:
             return self._start
         else:
-            return self._intervals[-1].end()
+            return self._intervals[-1].end
 
     def is_workday(self):
         return self._is_workday
@@ -125,13 +127,13 @@ class WorkSession(object):
 
     def last_break_interval(self):
         for interval in reversed(self._intervals):
-            if interval.is_break():
+            if interval.is_break:
                 return interval
         return None
 
     def last_work_interval(self):
         for interval in reversed(self._intervals):
-            if not interval.is_break():
+            if not interval.is_break:
                 return interval
         return None
 
@@ -149,4 +151,4 @@ class WorkSession(object):
 
     def map_names(self, func):
         for interval in self._intervals:
-            interval.set_name(func(interval.name()))
+            interval.name = func(interval.name)

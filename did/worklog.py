@@ -165,8 +165,8 @@ class WorkLog(object):
             if len(self.sessions_) == 0:
                 raise FirstJobNotArriveError()
             session = self.sessions_[-1]
-            if session.start() + self.max_session_length < datetime:
-                raise TooLongSessionError(session.start().date(),
+            if session.start + self.max_session_length < datetime:
+                raise TooLongSessionError(session.start.date(),
                                           self.max_session_length)
             session.append_log_event(datetime, text)
 
@@ -186,7 +186,7 @@ class WorkLog(object):
         if len(self.sessions_) == 0:
             return None
         else:
-            return self.sessions_[-1].end()
+            return self.sessions_[-1].end
 
     def sessions(self):
         return self.sessions_

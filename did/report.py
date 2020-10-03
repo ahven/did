@@ -20,7 +20,7 @@ Fifth Floor, Boston, MA  02110-1301  USA
 
 from did.console_codes import Foreground, Attributes
 import datetime
-from did.WorkInterval import WorkInterval
+from did.interval import interval_name_denotes_a_break
 
 
 class ReportTimeUnit:
@@ -100,7 +100,7 @@ class Display:
         self.matched_work_time = datetime.timedelta(0)
         self.matched_break_time = datetime.timedelta(0)
         for session in worklog.sessions():
-            if self.day_range.contains(session.start().date()):
+            if self.day_range.contains(session.start.date()):
                 self.append_session(session)
                 self.total_work_time += session.stats().time_worked()
                 self.total_break_time += session.stats().time_slacked()
@@ -156,7 +156,7 @@ class SessionDisplay(Display):
 
     def print_session_header(self, session):
         print()
-        print(Foreground.green + str(session.start().date()), end=' ')
+        print(Foreground.green + str(session.start.date()), end=' ')
         if not session.is_workday():
             print("  (Out of office)", end=' ')
         print(Attributes.reset)
@@ -185,24 +185,24 @@ class ChronologicalSessionDisplay(SessionDisplay):
     def print_session_content(self, session):
         if len(session.intervals()) == 0:
             self.print_log_line(
-                    "", time_as_string(session.start()),
+                    "", time_as_string(session.start),
                     Foreground.red, "arrive", "", "")
 
         for interval in session.intervals():
-            if interval.is_selected():
+            if interval.is_selected:
                 self._print_interval(interval)
 
     def _print_interval(self, interval):
-        name = interval.name()
-        if interval.is_assumed():
+        name = interval.name
+        if interval.is_assumed:
             name += " (assumed)"
 
         self.print_log_line(
-                time_as_string(interval.start()),
-                time_as_string(interval.end()),
-                get_name_color(interval.is_break(), interval.is_assumed()),
+                time_as_string(interval.start),
+                time_as_string(interval.end),
+                get_name_color(interval.is_break, interval.is_assumed),
                 name,
-                get_duration_color(interval.is_break(), interval.is_assumed()),
+                get_duration_color(interval.is_break, interval.is_assumed),
                 self.job_unit.to_string(interval.duration(self.adjusted)))
 
     def print_log_line(
@@ -282,7 +282,7 @@ class AggregateTreeNode:
     def _print_aggregated_interval(self, name, indent_level, unit):
         duration = self.get_child_duration(name)
         duration_str = unit.to_string(duration)
-        is_break = WorkInterval.name_is_break(name)
+        is_break = interval_name_denotes_a_break(name)
         is_assumed = (name == "(assumed)")
         indent = ""
         for i in range(indent_level): indent += "     "
@@ -299,11 +299,11 @@ class AggregateTreeNode:
 
     def add_session(self, session):
         for interval in session.intervals():
-            if interval.is_selected():
+            if interval.is_selected:
                 self.add_interval(
-                        interval.name().split(),
+                        interval.name.split(),
                         interval.duration(self.adjusted),
-                        interval.is_assumed())
+                        interval.is_assumed)
 
 
 class AggregateSessionDisplay(SessionDisplay):

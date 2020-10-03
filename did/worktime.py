@@ -171,15 +171,15 @@ class WorkSessionStats(object):
         real_work_seconds = 0
 
         for interval in self._session.intervals():
-            if interval.is_break():
+            if interval.is_break:
                 self._analyze_break(interval)
             else:
-                duration = interval.end() - interval.start()
+                duration = interval.end - interval.start
                 self._analyze_work(duration.total_seconds())
                 real_work_seconds += duration.total_seconds()
 
         for interval in self._session.intervals():
-            if not interval.is_break():
+            if not interval.is_break:
                 interval.account_break_duration(
                     self.break_seconds_counted_as_work
                     * interval.real_duration().total_seconds()
