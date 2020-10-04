@@ -21,7 +21,7 @@ Fifth Floor, Boston, MA  02110-1301  USA
 import datetime
 import re
 import shlex
-from typing import List
+from typing import List, Optional, Union
 
 from pytimeparse.timeparse import timeparse
 
@@ -31,7 +31,7 @@ from did.worktime import make_preset_accounting, WorkSessionStats, \
 
 
 def parse_timedelta(time_expression: str) -> datetime.timedelta:
-    seconds = timeparse(time_expression)
+    seconds: Optional[Union[int, float]] = timeparse(time_expression)
     if seconds is None:
         raise ValueError("Invalid time interval expression: {}"
                          .format(time_expression))
@@ -55,6 +55,7 @@ class NonChronologicalOrderError(Exception):
         appended_datetime - -The time of the job attempted to be added.
     """
     def __init__(self, last, appended):
+        super().__init__("Non-chronological order")
         self.last_datetime = last
         self.appended_datetime = appended
 
@@ -81,7 +82,7 @@ class TooLongSessionError(Exception):
                          "length (equal to {})".format(date, max_duration))
 
 
-class WorkLog(object):
+class WorkLog:
     """
     A WorkLog keeps all information throughout the whole history.
     It consists of WorkSession's.
@@ -111,7 +112,8 @@ class WorkLog(object):
             try:
                 if isinstance(parsed_line, Event):
                     num_sessions = len(self.sessions_)
-                    self.append_log_event(parsed_line.timestamp, parsed_line.text)
+                    self.append_log_event(parsed_line.timestamp,
+                                          parsed_line.text)
                     if (current_session_is_closed and
                             num_sessions == len(self.sessions_)):
                         # Something was appended to the current session,
@@ -128,16 +130,17 @@ class WorkLog(object):
                     self.accounting.delete_break(parsed_line.name)
                     current_session_is_closed = True
                 else:
-                    raise AssertionError('Unhandled parsed line: {}'.format(parsed_line))
-            except Exception as e:
+                    raise AssertionError('Unhandled parsed line: {}'
+                                         .format(parsed_line))
+            except Exception as error:
                 print("Error while parsing file \"{}\", line {}:"
                       .format(file_name, line_number))
-                raise e
+                raise error
 
-    def _check_chronology(self, datetime):
+    def _check_chronology(self, date_time: datetime.datetime):
         end = self.end()
-        if end != None and end > datetime:
-            raise NonChronologicalOrderError(end, datetime)
+        if end is not None and end > date_time:
+            raise NonChronologicalOrderError(end, date_time)
 
     def set_filter_regex(self, regex):
         self.filter_regex = regex
@@ -147,28 +150,30 @@ class WorkLog(object):
     def has_filter(self):
         return self.filter_regex is not None
 
-    def append_log_event(self, datetime, text):
-        self._check_chronology(datetime)
+    def append_log_event(self, date_time: datetime.datetime, text):
+        self._check_chronology(date_time)
 
         if text == "arrive":
             if self.last_work_session_start_date is not None:
-                if datetime.date() == self.last_work_session_start_date:
+                if date_time.date() == self.last_work_session_start_date:
                     raise MultipleSessionsInOneDayError(
                         self.last_work_session_start_date)
-            self.last_work_session_start_date = datetime.date()
-            self.sessions_.append(WorkSession(datetime, self.accounting.clone(),
-                                              True, self.filter_regex))
+            self.last_work_session_start_date = date_time.date()
+            self.sessions_.append(
+                WorkSession(date_time, self.accounting.clone(), True,
+                            self.filter_regex))
         elif text == "arrive ooo":
-            self.sessions_.append(WorkSession(datetime, self.accounting.clone(),
-                                              False, self.filter_regex))
+            self.sessions_.append(
+                WorkSession(date_time, self.accounting.clone(), False,
+                            self.filter_regex))
         else:
-            if len(self.sessions_) == 0:
+            if not self.sessions_:
                 raise FirstJobNotArriveError()
             session = self.sessions_[-1]
-            if session.start + self.max_session_length < datetime:
+            if session.start + self.max_session_length < date_time:
                 raise TooLongSessionError(session.start.date(),
                                           self.max_session_length)
-            session.append_log_event(datetime, text)
+            session.append_log_event(date_time, text)
 
     def set_parameter(self, name, value):
         if name == 'daily_work_time':
@@ -176,17 +181,16 @@ class WorkLog(object):
         else:
             raise InvalidParameter(name)
 
-    def append_assumed_interval(self, datetime):
-        self._check_chronology(datetime)
+    def append_assumed_interval(self, date_time: datetime.datetime):
+        self._check_chronology(date_time)
 
-        if len(self.sessions_) > 0:
-            self.sessions_[-1].append_assumed_interval(datetime)
+        if self.sessions_:
+            self.sessions_[-1].append_assumed_interval(date_time)
 
     def end(self):
-        if len(self.sessions_) == 0:
-            return None
-        else:
+        if self.sessions_:
             return self.sessions_[-1].end
+        return None
 
     def sessions(self):
         return self.sessions_
@@ -370,8 +374,8 @@ def job_reader(path):
                 if result is not None:
                     yield result
     except IOError as err:
-        print("Error opening/reading from file '{0}': {1}".format(
-                err.filename, err.strerror))
+        print("Error opening/reading from file '{0}': {1}"
+              .format(err.filename, err.strerror))
 
 
 class JobListWriter:
@@ -385,5 +389,5 @@ class JobListWriter:
                         (date.year, date.month, date.day,
                          date.hour, date.minute, date.second, name))
         except IOError as err:
-            print("Error opening/writing to file '{0}': {1}".format(
-                                                    err.filename, err.strerror))
+            print("Error opening/writing to file '{0}': {1}"
+                  .format(err.filename, err.strerror))

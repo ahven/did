@@ -1,7 +1,7 @@
 from datetime import timedelta
 from unittest import TestCase
 
-from did.worklog import parse_timedelta, InvalidParameter
+from did.worklog import parse_timedelta
 
 
 class TestParseTimedelta(TestCase):

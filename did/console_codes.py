@@ -24,16 +24,16 @@ def ecma48(param):
 
 
 class Foreground(object):
-    black   = ecma48(30)
-    red     = ecma48(31)
-    green   = ecma48(32)
-    brown   = ecma48(33)
-    blue    = ecma48(34)
+    black = ecma48(30)
+    red = ecma48(31)
+    green = ecma48(32)
+    brown = ecma48(33)
+    blue = ecma48(34)
     magenta = ecma48(35)
-    cyan    = ecma48(36)
-    white   = ecma48(37)
+    cyan = ecma48(36)
+    white = ecma48(37)
 
 
 class Attributes(object):
-    reset   = ecma48(0)
-    bold    = ecma48(1)
+    reset = ecma48(0)
+    bold = ecma48(1)

@@ -1,4 +1,4 @@
-from argparse import Namespace, REMAINDER
+from argparse import REMAINDER
 
 import pytest
 

@@ -1,5 +1,5 @@
 import tempfile
-from contextlib import ExitStack as does_not_raise, contextmanager
+from contextlib import ExitStack as does_not_raise
 from datetime import datetime
 from pathlib import Path
 from typing import List, Tuple, Union

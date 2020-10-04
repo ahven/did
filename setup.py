@@ -8,7 +8,7 @@ setup(
    # author_email='',
    packages=['did'],
    install_requires=['pytest', 'pytimeparse'],
-   entry_points = {
+   entry_points={
         'console_scripts': ['did=did.did:main'],
    },
 )

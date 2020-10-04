@@ -7,6 +7,7 @@ import unittest
 import datetime
 from did.day_range import DayRange, InvalidRangeFormatError
 
+
 def d(year, month, day):
     return datetime.date(year, month, day)
 
@@ -23,7 +24,7 @@ class DayRangeTest(unittest.TestCase):
 
     def verifyFirstLength(self, text, expected_first, expected_num_days):
         self.verify(text, expected_first,
-                expected_first + datetime.timedelta(expected_num_days - 1))
+                    expected_first + datetime.timedelta(expected_num_days - 1))
 
     def verifySameOutput(self, text1, text2):
         day_range1 = DayRange(text1)
@@ -70,7 +71,7 @@ class DayRangeTest(unittest.TestCase):
         self.verifyOne("%d-%02d" % (today.month, today.day), today)
         self.verifyOne("%d-%02d" % (yesterday.month, yesterday.day), yesterday)
         self.verifyOne("%d-%02d" % (tomorrow.month, tomorrow.day),
-                    d(tomorrow.year - 1, tomorrow.month, tomorrow.day))
+                       d(tomorrow.year - 1, tomorrow.month, tomorrow.day))
 
         self.verifyInvalid("13-01")
         self.verifyInvalid("02-30")
@@ -124,36 +125,40 @@ class DayRangeTest(unittest.TestCase):
 
     def testWww(self):
         today = datetime.date.today()
-        today_iso = today.isocalendar();
+        today_iso = today.isocalendar()
         # TODO: There's a bug, when tested with today=2019-12-30
         # self.verifySameOutput("W1", "%d-W01" % today.year)
         # self.verifySameOutput("W01", "%d-W01" % today.year)
         # self.verifySameOutput("w1", "%d-W01" % today.year)
         # self.verifySameOutput("w01", "%d-W01" % today.year)
         self.verifySameOutput("W%d" % today_iso[1],
-                "%d-W%02d" % (today_iso[0], today_iso[1]))
+                              "%d-W%02d" % (today_iso[0], today_iso[1]))
         self.verifyInvalid("W54")
 
     def testCurrentWeek(self):
         today = datetime.date.today()
-        self.verifyFirstLength("W0", today - datetime.timedelta(today.weekday()), 7)
-        self.verifyFirstLength("w0", today - datetime.timedelta(today.weekday()), 7)
-        self.verifyFirstLength("W-0", today - datetime.timedelta(today.weekday()), 7)
-        self.verifyFirstLength("w-0", today - datetime.timedelta(today.weekday()), 7)
+        self.verifyFirstLength("W0",
+                               today - datetime.timedelta(today.weekday()), 7)
+        self.verifyFirstLength("w0",
+                               today - datetime.timedelta(today.weekday()), 7)
+        self.verifyFirstLength("W-0",
+                               today - datetime.timedelta(today.weekday()), 7)
+        self.verifyFirstLength("w-0",
+                               today - datetime.timedelta(today.weekday()), 7)
         self.verifyInvalid("W00")
         self.verifyInvalid("w-00")
 
     def testXWeeksAgo(self):
         today = datetime.date.today()
         self.verify("W-1",
-                today - datetime.timedelta(today.weekday() + 7),
-                today - datetime.timedelta(today.weekday() + 1))
+                    today - datetime.timedelta(today.weekday() + 7),
+                    today - datetime.timedelta(today.weekday() + 1))
         self.verify("W-20",
-                today - datetime.timedelta(today.weekday() + 20 * 7),
-                today - datetime.timedelta(today.weekday() + 20 * 7 - 6))
+                    today - datetime.timedelta(today.weekday() + 20 * 7),
+                    today - datetime.timedelta(today.weekday() + 20 * 7 - 6))
         self.verify("W-100",
-                today - datetime.timedelta(today.weekday() + 100 * 7),
-                today - datetime.timedelta(today.weekday() + 100 * 7 - 6))
+                    today - datetime.timedelta(today.weekday() + 100 * 7),
+                    today - datetime.timedelta(today.weekday() + 100 * 7 - 6))
         self.verifyInvalid("W-01")
 
     def testRange(self):
@@ -161,5 +166,4 @@ class DayRangeTest(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    #import sys;sys.argv = ['', 'Test.testName']
     unittest.main()

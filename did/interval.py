@@ -62,7 +62,9 @@ class Interval:
                 .format(self._start, self._end, repr(self.name),
                         self.is_assumed, self.is_selected, self.is_break))
 
-    def __eq__(self, other: 'Interval'):
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Interval):
+            return False
         return (self._start == other._start and
                 self._end == other._end and
                 self.name == other.name and

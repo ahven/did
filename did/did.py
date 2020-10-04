@@ -95,7 +95,8 @@ class DidApplication:
         session_display = cls(self.worklog, DayRange(self.args.range),
                               self.args.split_breaks)
 
-        if self.args.percentage and (self.args.aggregate_range or self.args.aggregate_day):
+        if self.args.percentage and (self.args.aggregate_range or
+                                     self.args.aggregate_day):
             session_display.set_unit(ReportTimePercent(self.args.split_breaks))
         session_display.display()
 
@@ -226,7 +227,10 @@ class DidApplication:
         self.worklog.append_log_event(self.now, name)
 
 
-def main(cmdline_args=sys.argv[1:], now=None):
+def main(cmdline_args=None, now=None):
+    if cmdline_args is None:
+        cmdline_args = sys.argv[1:]
+
     app = DidApplication(cmdline_args, now)
     app.run()
 

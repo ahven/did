@@ -78,8 +78,8 @@ class TestBasicSession(unittest.TestCase):
             else:
                 self.session.append_interval(interval, False)
 
-    def verify_generic(self, intervals, expected_work_seconds, expected_break_seconds,
-               is_workday):
+    def verify_generic(self, intervals, expected_work_seconds,
+                       expected_break_seconds, is_workday):
         accounting = make_preset_accounting('PL-computer')
         self.session = SessionMock(accounting, is_workday)
         self.append_intervals(intervals)
@@ -91,11 +91,13 @@ class TestBasicSession(unittest.TestCase):
         self.assertEqual(stats.time_slacked(), expected_breaktime)
 
     def verify(self, intervals, expected_work_seconds, expected_break_seconds):
-        self.verify_generic(intervals, expected_work_seconds, expected_break_seconds, True)
+        self.verify_generic(intervals, expected_work_seconds,
+                            expected_break_seconds, True)
 
-    def verify_ooo(self, intervals, expected_work_seconds, expected_break_seconds):
-        self.verify_generic(intervals, expected_work_seconds, expected_break_seconds, False)
-
+    def verify_ooo(self, intervals, expected_work_seconds,
+                   expected_break_seconds):
+        self.verify_generic(intervals, expected_work_seconds,
+                            expected_break_seconds, False)
 
     def test_only_work_adds_up(self):
         self.verify([5, 10, 20], 35, 0)
@@ -140,5 +142,4 @@ class TestBasicSession(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    #import sys;sys.argv = ['', 'Test.testName']
     unittest.main()

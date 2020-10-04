@@ -28,7 +28,7 @@ class UnsupportedBreakConfig(Exception):
 
 class PaidBreakConfig:
     def __init__(self,
-                 name: Optional[str] = None,
+                 name: str,
                  duration: Optional[datetime.timedelta] = None,
                  max_occurrences_per_day: Optional[int] = None,
                  splittable: Optional[bool] = None,

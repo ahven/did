@@ -175,19 +175,23 @@ class SessionDisplay(Display):
 
     def print_matched_jobs_footer(self, session):
         print("  Matched: Work %-6s   Break %-6s" % (
-                self.matched_stats_unit.to_string(session.matched_work_time(self.adjusted)),
-                self.matched_stats_unit.to_string(session.matched_break_time(self.adjusted))))
+                self.matched_stats_unit.to_string(
+                    session.matched_work_time(self.adjusted)),
+                self.matched_stats_unit.to_string(
+                    session.matched_break_time(self.adjusted))))
 
     def print_session_footer(self, session):
         work_time = session.stats().time_worked()
         break_time = session.stats().time_slacked()
         overtime = session.stats().overhours()
 
-        print("  Worktime %-6s   Slacktime %-6s   Overtime %-6s (running total %s)" % (
+        print("  Worktime %-6s   Slacktime %-6s   Overtime %-6s "
+              "(running total %s)" % (
                     self.overall_stats_unit.to_string(work_time),
                     self.overall_stats_unit.to_string(break_time),
                     self.overall_stats_unit.to_string(overtime),
-                    self.overall_stats_unit.to_string(session.total_overtime())))
+                    self.overall_stats_unit.to_string(
+                        session.total_overtime())))
 
 
 class ChronologicalSessionDisplay(SessionDisplay):
@@ -243,7 +247,7 @@ class AggregateTreeNode:
                 name = '(assumed)'
             else:
                 name = ''
-            if not name in self.children:
+            if name not in self.children:
                 self.children[name] = datetime.timedelta(0)
             self.children[name] += duration
         else:
@@ -286,7 +290,7 @@ class AggregateTreeNode:
     def display(self, unit, indent_level=0):
         sorted_names = sorted(
                 self.children,
-                key=lambda x: self.get_child_duration(x),
+                key=self.get_child_duration,
                 reverse=True)
         for name in sorted_names:
             self._print_aggregated_interval(name, indent_level, unit)
@@ -296,8 +300,7 @@ class AggregateTreeNode:
         duration_str = unit.to_string(duration)
         is_break = interval_name_denotes_a_break(name)
         is_assumed = (name == "(assumed)")
-        indent = ""
-        for i in range(indent_level): indent += "     "
+        indent = "     " * indent_level
         print("   %s%s%-6s%s  %s%s%s" % (
                 indent,
                 get_duration_color(is_break, is_assumed),

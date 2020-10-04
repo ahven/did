@@ -72,7 +72,8 @@ class TestNameSimplification(unittest.TestCase):
         tree = AggregateTreeNode(adjusted=False)
         tree.add_interval(["a", "b"], self.t1, False)
         tree.add_interval(["x", "y"], self.t1, False)
-        self.assertTreeEqual(tree, {"a": {"b": {"": None}}, "x": {"y": {"": None}}})
+        self.assertTreeEqual(tree, {"a": {"b": {"": None}},
+                                    "x": {"y": {"": None}}})
         tree.simplify()
         self.assertTreeEqual(tree, {"a b": None, "x y": None})
 
@@ -88,7 +89,8 @@ class TestNameSimplification(unittest.TestCase):
         tree = AggregateTreeNode(adjusted=False)
         tree.add_interval(["a", "b", "c"], self.t1, False)
         tree.add_interval(["a", "d", "e"], self.t1, False)
-        self.assertTreeEqual(tree, {"a": {"b": {"c": {"": None}}, "d": {"e": {"": None}}}})
+        self.assertTreeEqual(tree, {"a": {"b": {"c": {"": None}},
+                                          "d": {"e": {"": None}}}})
         tree.simplify()
         self.assertTreeEqual(tree, {"a": {"b c": None, "d e": None}})
 
@@ -96,36 +98,47 @@ class TestNameSimplification(unittest.TestCase):
         tree = AggregateTreeNode(adjusted=False)
         tree.add_interval(["a", "b", "c"], self.t1, False)
         tree.add_interval(["a", "b", "d"], self.t1, False)
-        self.assertTreeEqual(tree, {"a": {"b": {"c": {"": None}, "d": {"": None}}}})
+        self.assertTreeEqual(tree, {"a": {"b": {"c": {"": None},
+                                                "d": {"": None}}}})
         tree.simplify()
         self.assertTreeEqual(tree, {"a b": {"c": None, "d": None}})
 
-    def test_insert_2_3_level_items_with_common_level_1_and_1_different_level_1(self):
+    def test_insert_2_3_level_items_with_common_level_1_and_1_different_level_1(
+            self):
         tree = AggregateTreeNode(adjusted=False)
         tree.add_interval(["a", "b", "c"], self.t1, False)
         tree.add_interval(["a", "d", "e"], self.t1, False)
         tree.add_interval(["x"], self.t1, False)
-        self.assertTreeEqual(tree, {"a": {"b": {"c": {"": None}}, "d": {"e": {"": None}}}, "x": {"": None}})
+        self.assertTreeEqual(tree, {"a": {"b": {"c": {"": None}},
+                                          "d": {"e": {"": None}}},
+                                    "x": {"": None}})
         tree.simplify()
         self.assertTreeEqual(tree, {"a": {"b c": None, "d e": None}, "x": None})
 
-    def test_insert_2_3_level_items_with_common_levels_1_and_2_and_1_different_level_1(self):
+    def test_insert_2_3_level_items_with_common_levels_1_and_2_and_1_different_level_1(
+            self):
         tree = AggregateTreeNode(adjusted=False)
         tree.add_interval(["a", "b", "c"], self.t1, False)
         tree.add_interval(["a", "b", "d"], self.t1, False)
         tree.add_interval(["x"], self.t1, False)
-        self.assertTreeEqual(tree, {"a": {"b": {"c": {"": None}, "d": {"": None}}}, "x": {"": None}})
+        self.assertTreeEqual(tree, {"a": {"b": {"c": {"": None},
+                                                "d": {"": None}}},
+                                    "x": {"": None}})
         tree.simplify()
         self.assertTreeEqual(tree, {"a b": {"c": None, "d": None}, "x": None})
 
-    def test_insert_2_3_level_items_with_common_levels_1_and_2_and_1_with_common_level_1(self):
+    def test_insert_2_3_level_items_with_common_levels_1_and_2_and_1_with_common_level_1(
+            self):
         tree = AggregateTreeNode(adjusted=False)
         tree.add_interval(["a", "b", "c"], self.t1, False)
         tree.add_interval(["a", "b", "d"], self.t1, False)
         tree.add_interval(["a", "x"], self.t1, False)
-        self.assertTreeEqual(tree, {"a": {"b": {"c": {"": None}, "d": {"": None}}, "x": {"": None}}})
+        self.assertTreeEqual(tree, {"a": {"b": {"c": {"": None},
+                                                "d": {"": None}},
+                                          "x": {"": None}}})
         tree.simplify()
-        self.assertTreeEqual(tree, {"a": {"b": {"c": None, "d": None}, "x": None}})
+        self.assertTreeEqual(tree, {"a": {"b": {"c": None, "d": None},
+                                          "x": None}})
 
 
 if __name__ == "__main__":
