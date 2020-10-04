@@ -1,20 +1,37 @@
 """
-Created on 2012-06-04
+Copyright (C) 2012-2020 Michał Czuczman
 
-@author: ahven
+This file is part of Did.
+
+Did is free software; you can redistribute it and/or modify it under the
+terms of the GNU General Public License as published by the Free Software
+Foundation; either version 2 of the License, or (at your option) any later
+version.
+
+Did is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License along with
+Foobar; if not, write to the Free Software Foundation, Inc., 51 Franklin St,
+Fifth Floor, Boston, MA  02110-1301  USA
 """
-
 import datetime
-import re
+from typing import Tuple
 
+from did.regex_dispatcher import RegexDispatcher, UnhandledDispatchError
 
 today = datetime.date.today()
 
 
-# http://stackoverflow.com/questions/304256/whats-the-best-way-to-find-the-inverse-of-datetime-isocalendar
-def iso_to_gregorian(iso_year, iso_week, iso_day):
-    "Gregorian calendar date for the given ISO year, week and day"
+def date_from_isocalendar(iso_year: int,
+                          iso_week: int,
+                          iso_day: int
+                          ) -> datetime.date:
+    """Construct datetime.date() from given ISO year, week number and week day.
+    This is the inverse of datetime.date.isocalendar()."""
 
+    # http://stackoverflow.com/questions/304256/whats-the-best-way-to-find-the-inverse-of-datetime-isocalendar
     fourth_jan = datetime.date(iso_year, 1, 4)
     delta = datetime.timedelta(fourth_jan.isoweekday()-1)
     year_start = fourth_jan - delta
@@ -23,48 +40,20 @@ def iso_to_gregorian(iso_year, iso_week, iso_day):
 
 
 class InvalidRangeFormatError(Exception):
-
+    """Exception raised when an invalid DayRange format was provided"""
     def __init__(self, range_specs):
+        super().__init__()
         self.range_specs = range_specs
 
     def __str__(self):
         return "Invalid range: " + self.range_specs
 
 
-class PatternDecoratorDispatcher:
-    """
-    Decorator-based regex pattern dispatcher
-    """
-
-    def __init__(self):
-        self.patterns = []
-
-    def register(self, pattern):
-        """Decorator to register a dispatching function"""
-        regex = re.compile(pattern)
-        def wrap(func):
-            self.patterns.append( (regex, func) )
-            return func
-        return wrap
-
-    def dispatch(self, obj, text):
-        """
-        Call the first registered function whose pattern matches given text.
-        Passes a tuple containing all the subgroups of the match.
-        Return True if there was a match and a function was called.
-        Return False otherwise.
-        """
-        for regex, func in self.patterns:
-            match = regex.search(text)
-            if match:
-                func(obj, match.groups())
-                return True
-        return False
+TupleOfTwoDates = Tuple[datetime.date, datetime.date]
 
 
 class DayRange:
-    """
-    A range of days
+    """A range of days. Multiple formats are supported.
 
     One day formats:
      * YYYY-MM-DD
@@ -88,146 +77,172 @@ class DayRange:
      * <first>..<last>
     """
 
-    patterns = PatternDecoratorDispatcher()
-
-    def __init__(self, range_specs):
+    def __init__(self, range_spec: str):
         try:
-            if not DayRange.patterns.dispatch(self, range_specs):
-                raise InvalidRangeFormatError(range_specs)
-        except ValueError:
-            raise InvalidRangeFormatError(range_specs)
+            result = _parse_day_range(range_spec)  # type: TupleOfTwoDates
+            self._first_day, self._last_day = result
+        except UnhandledDispatchError:
+            raise InvalidRangeFormatError(range_spec)
+        except ValueError as error:
+            # Creating the datetime.date() failed (e.g. for February 31st)
+            raise InvalidRangeFormatError(range_spec) from error
 
     @property
     def first_day(self):
-        return self._first
+        """Return the first day of the range (read-only)"""
+        return self._first_day
 
     @property
     def last_day(self):
-        return self._last
+        """Return the last day of the range (read-only)"""
+        return self._last_day
 
     def __contains__(self, date):
         """Check if the given date belongs to this day range (inclusive)"""
-        return self._first <= date <= self._last
+        return self._first_day <= date <= self._last_day
 
-    def _init_range(self, first, last):
-        """Initialize the day range with a pair of days (first and last)"""
-        self._first = first
-        self._last = last
 
-    def _init_date(self, date):
-        """Initialize the day range to a single day"""
-        self._first = date
-        self._last = date
+_parse_day_range = RegexDispatcher()
 
-    @patterns.register(
-            r'^([12][0-9]{3})(-?)(0[1-9]|1[012])\2(0[1-9]|[12][0-9]|3[01])$')
-    def _pattern_yyyy_mm_dd(self, groups):
-        self._init_date(
-                datetime.date(int(groups[0]), int(groups[2]), int(groups[3])))
 
-    @patterns.register(r'^(0?[1-9]|1[012])-(0[1-9]|[12][0-9]|3[01])$')
-    def _pattern_mm_dd(self, groups):
-        month = int(groups[0])
-        day = int(groups[1])
+def _one_day_range(date: datetime.date) -> Tuple[datetime.date, datetime.date]:
+    """Return a (first, last) day range for a single day"""
+    return date, date
 
-        if month > today.month or (month == today.month and day > today.day):
-            # Month-day is past today in this year.  Use the last year.
-            year = today.year - 1
-        else:
-            # Month-day is today or less.  Use the current year.
-            year = today.year
 
-        self._init_date(datetime.date(year, month, day))
+@_parse_day_range.register(
+        r'^([12][0-9]{3})(-?)(0[1-9]|1[012])\2(0[1-9]|[12][0-9]|3[01])$')
+def _pattern_yyyy_mm_dd(groups: Tuple[str, ...]
+                        ) -> Tuple[datetime.date, datetime.date]:
+    return _one_day_range(
+        datetime.date(int(groups[0]), int(groups[2]), int(groups[3])))
 
-    @patterns.register(r'^(0?[1-9]|[12][0-9]|3[01])$')
-    def _pattern_dd(self, groups):
+
+@_parse_day_range.register(r'^(0?[1-9]|1[012])-(0[1-9]|[12][0-9]|3[01])$')
+def _pattern_mm_dd(groups: Tuple[str, ...]
+                   ) -> Tuple[datetime.date, datetime.date]:
+    month = int(groups[0])
+    day = int(groups[1])
+
+    if month > today.month or (month == today.month and day > today.day):
+        # Month-day is past today in this year.  Use the last year.
+        year = today.year - 1
+    else:
+        # Month-day is today or less.  Use the current year.
         year = today.year
-        month = today.month
-        day = int(groups[0])
 
-        if day > today.day:
-            month = month - 1
-            if month < 1:
-                month = 12
-                year = year - 1
+    return _one_day_range(datetime.date(year, month, day))
 
-        self._init_date(datetime.date(year, month, day))
 
-    @patterns.register(
-            r'^([12][0-9]{3})(-?)[wW](0[1-9]|[1-4][0-9]|5[0-3])\2([1-7])')
-    def _pattern_iso_week_date(self, groups):
-        self._init_date(iso_to_gregorian(
-                    int(groups[0]), int(groups[2]), int(groups[3])))
+@_parse_day_range.register(r'^(0?[1-9]|[12][0-9]|3[01])$')
+def _pattern_dd(groups: Tuple[str, ...]) -> Tuple[datetime.date, datetime.date]:
+    year = today.year
+    month = today.month
+    day = int(groups[0])
 
-    @patterns.register(r'^-(0|[1-9][0-9]*)$')
-    def _pattern_x_days_ago(self, groups):
-        self._init_date(today - datetime.timedelta(int(groups[0])))
+    if day > today.day:
+        month = month - 1
+        if month < 1:
+            month = 12
+            year = year - 1
 
-    @patterns.register(r'^0$')
-    def _pattern_today(self, groups):
-        self._init_date(today)
+    return _one_day_range(datetime.date(year, month, day))
 
-    @patterns.register(r'^([12][0-9]{3})-?[wW](0[1-9]|[1-4][0-9]|5[0-3])$')
-    def _pattern_iso_week(self, groups):
-        self._init_range(
-                iso_to_gregorian(int(groups[0]), int(groups[1]), 1),
-                iso_to_gregorian(int(groups[0]), int(groups[1]), 7))
 
-    @patterns.register(r'^[wW](0?[1-9]|[1-4][0-9]|5[0-3])$')
-    def _pattern_w_ww(self, groups):
-        (today_year, today_week) = today.isocalendar()[0:2]
-        week = int(groups[0])
+@_parse_day_range.register(
+        r'^([12][0-9]{3})(-?)[wW](0[1-9]|[1-4][0-9]|5[0-3])\2([1-7])')
+def _pattern_iso_week_date(groups: Tuple[str, ...]
+                           ) -> Tuple[datetime.date, datetime.date]:
+    return _one_day_range(date_from_isocalendar(
+                int(groups[0]), int(groups[2]), int(groups[3])))
 
-        if week > today_week:
-            # Week is past current week in this year.  Use the last year.
-            year = today_year - 1
-        else:
-            # Week is current week in this year or less.  Use the current year.
-            year = today_year
 
-        self._init_range(
-                iso_to_gregorian(year, week, 1),
-                iso_to_gregorian(year, week, 7))
+@_parse_day_range.register(r'^-(0|[1-9][0-9]*)$')
+def _pattern_x_days_ago(groups: Tuple[str, ...]
+                        ) -> Tuple[datetime.date, datetime.date]:
+    return _one_day_range(today - datetime.timedelta(int(groups[0])))
 
-    @patterns.register(r'^[wW]-?0$')
-    def _pattern_current_week(self, groups):
-        self._init_range(today - datetime.timedelta(today.weekday()),
-                         today + datetime.timedelta(6 - today.weekday()))
 
-    @patterns.register(r'^[wW]-([1-9][0-9]*)$')
-    def _pattern_x_weeks_ago(self, groups):
-        start = today - datetime.timedelta(today.weekday() + 7 * int(groups[0]))
-        self._init_range(start, start + datetime.timedelta(6))
+@_parse_day_range.register(r'^0$')
+def _pattern_today(groups: Tuple[str, ...]
+                   ) -> Tuple[datetime.date, datetime.date]:
+    # pylint: disable=unused-argument
+    return _one_day_range(today)
 
-    @patterns.register(
-            r'^([12][0-9]{3})-(0?[1-9]|1[012])$')
-    def _pattern_yyyy_mm(self, groups):
-        year = int(groups[0])
-        month = int(groups[1])
-        next_month = (month % 12) + 1
-        if next_month == 1:
-            next_months_year = year + 1
-        else:
-            next_months_year = year
-        start = datetime.date(year, month, 1)
-        end = datetime.date(next_months_year, next_month, 1) \
-                - datetime.timedelta(1)
-        self._init_range(start, end)
 
-    @patterns.register(r'^(2[0-9]{3})$')
-    def _pattern_yyyy(self, groups):
-        year = int(groups[0])
-        self._init_range(datetime.date(year, 1, 1),
-                         datetime.date(year, 12, 31))
+@_parse_day_range.register(r'^([12][0-9]{3})-?[wW](0[1-9]|[1-4][0-9]|5[0-3])$')
+def _pattern_iso_week(groups: Tuple[str, ...]
+                      ) -> Tuple[datetime.date, datetime.date]:
+    return (date_from_isocalendar(int(groups[0]), int(groups[1]), 1),
+            date_from_isocalendar(int(groups[0]), int(groups[1]), 7))
 
-    @patterns.register(r'^([^.]*)\.\.([^.]*)$')
-    def _pattern_first_last(self, groups):
-        if groups[0] == '':
-            self._first = datetime.date.min
-        else:
-            self._first = DayRange(groups[0])._first
 
-        if groups[1] == '':
-            self._last = datetime.date.max
-        else:
-            self._last = DayRange(groups[1])._last
+@_parse_day_range.register(r'^[wW](0?[1-9]|[1-4][0-9]|5[0-3])$')
+def _pattern_w_ww(groups: Tuple[str, ...]
+                  ) -> Tuple[datetime.date, datetime.date]:
+    (today_year, today_week) = today.isocalendar()[0:2]
+    week = int(groups[0])
+
+    if week > today_week:
+        # Week is past current week in this year.  Use the last year.
+        year = today_year - 1
+    else:
+        # Week is current week in this year or less.  Use the current year.
+        year = today_year
+
+    return (date_from_isocalendar(year, week, 1),
+            date_from_isocalendar(year, week, 7))
+
+
+@_parse_day_range.register(r'^[wW]-?0$')
+def _pattern_current_week(groups: Tuple[str, ...]
+                          ) -> Tuple[datetime.date, datetime.date]:
+    # pylint: disable=unused-argument
+    return (today - datetime.timedelta(today.weekday()),
+            today + datetime.timedelta(6 - today.weekday()))
+
+
+@_parse_day_range.register(r'^[wW]-([1-9][0-9]*)$')
+def _pattern_x_weeks_ago(groups: Tuple[str, ...]
+                         ) -> Tuple[datetime.date, datetime.date]:
+    start = today - datetime.timedelta(today.weekday() + 7 * int(groups[0]))
+    return start, start + datetime.timedelta(6)
+
+
+@_parse_day_range.register(r'^([12][0-9]{3})-(0?[1-9]|1[012])$')
+def _pattern_yyyy_mm(groups: Tuple[str, ...]
+                     ) -> Tuple[datetime.date, datetime.date]:
+    year = int(groups[0])
+    month = int(groups[1])
+    next_month = (month % 12) + 1
+    if next_month == 1:
+        next_months_year = year + 1
+    else:
+        next_months_year = year
+    start = datetime.date(year, month, 1)
+    end = (datetime.date(next_months_year, next_month, 1)
+           - datetime.timedelta(1))
+    return start, end
+
+
+@_parse_day_range.register(r'^(2[0-9]{3})$')
+def _pattern_yyyy(groups: Tuple[str, ...]
+                  ) -> Tuple[datetime.date, datetime.date]:
+    year = int(groups[0])
+    return datetime.date(year, 1, 1), datetime.date(year, 12, 31)
+
+
+@_parse_day_range.register(r'^([^.]*)\.\.([^.]*)$')
+def _pattern_first_last(groups: Tuple[str, ...]
+                        ) -> Tuple[datetime.date, datetime.date]:
+    if groups[0] == '':
+        first_day = datetime.date.min
+    else:
+        first_day = DayRange(groups[0]).first_day
+
+    if groups[1] == '':
+        last_day = datetime.date.max
+    else:
+        last_day = DayRange(groups[1]).last_day
+
+    return first_day, last_day
