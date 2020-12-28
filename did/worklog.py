@@ -232,7 +232,7 @@ class LineParser:
 
 
 class Event:
-    def __init__(self, timestamp: datetime.timedelta, text: str):
+    def __init__(self, timestamp: datetime.datetime, text: str):
         self.timestamp = timestamp
         self.text = text
 
