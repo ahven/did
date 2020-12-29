@@ -205,7 +205,3 @@ class WorkLog:
             total_overtime += stats.overhours()
             session.set_stats(stats)
             session.set_total_overtime(total_overtime)
-
-    def map_names(self, func):
-        for session in self.sessions_:
-            session.map_names(func)

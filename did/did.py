@@ -25,7 +25,6 @@ import argparse
 import datetime
 import errno
 import os
-import re
 import sys
 
 from did.argument_parser import ArgumentParser
@@ -35,23 +34,6 @@ from did.worklog_file import JobListWriter
 from did.report import ChronologicalSessionDisplay, AggregateSessionDisplay, \
         AggregateRangeDisplay, ReportTimePercent
 from did.day_range import DayRange
-
-
-def forward_slash_unescape(escaped):
-    unescaped = ''
-    i = 0
-    while i < len(escaped):
-        if escaped[i] == '\\' and i + 1 < len(escaped):
-            if escaped[i + 1] != '/':
-                # copy the backslash
-                unescaped += escaped[i]
-            # copy the following character
-            i += 1
-            unescaped += escaped[i]
-        else:
-            unescaped += escaped[i]
-        i += 1
-    return unescaped
 
 
 class DidApplication:
@@ -82,9 +64,6 @@ class DidApplication:
             if self.worklog.end().date() == self.now.date():
                 self.worklog.append_assumed_interval(self.now)
 
-        if self.args.categorized_report:
-            self.apply_categorization()
-
         self.worklog.compute_stats()
 
         if self.args.aggregate_range:
@@ -101,28 +80,6 @@ class DidApplication:
                                      self.args.aggregate_day):
             session_display.set_unit(ReportTimePercent(self.args.split_breaks))
         session_display.display()
-
-    def apply_categorization(self):
-        filename = self.get_config_dir() + "/categorization"
-        rx = re.compile("^s/((?:[^\\\\/]|\\\\.)+)/((?:[^\\\\/]|\\\\.)*)/\\s*$")
-        try:
-            with open(filename, "r") as f:
-                for line in f:
-                    if re.match("^\\s*(#|$)", line):
-                        continue
-                    m = rx.match(line)
-                    if not m:
-                        print("Invalid line in categorization file \"%s\": %s"
-                              % (filename, line))
-                        sys.exit(1)
-                    pattern = forward_slash_unescape(m.group(1))
-                    subst = forward_slash_unescape(m.group(2))
-                    cat_rx = re.compile(pattern)
-                    self.worklog.map_names(lambda x: cat_rx.sub(subst, x))
-
-        except IOError as err:
-            print("Error opening/reading from file '{0}': {1}".format(
-                    err.filename, err.strerror))
 
     def parse_options(self):
         parser = ArgumentParser(
@@ -157,10 +114,6 @@ class DidApplication:
                             default=None,
                             action="store",
                             help="display only jobs matching given pattern")
-        parser.add_argument("-c", "--categorized",
-                            action="store_true",
-                            dest="categorized_report",
-                            help="apply categorizing regexes to job names")
         parser.add_argument("-p", "--percentage",
                             action="store_true",
                             dest="percentage",

@@ -151,7 +151,3 @@ class WorkSession(object):
 
     def total_overtime(self):
         return self._total_overtime
-
-    def map_names(self, func):
-        for interval in self._intervals:
-            interval.name = func(interval.name)
