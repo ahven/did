@@ -30,7 +30,8 @@ import sys
 
 from did.argument_parser import ArgumentParser
 from did.editor import open_editor
-from did.worklog import WorkLog, JobListWriter
+from did.worklog import WorkLog
+from did.worklog_file import JobListWriter
 from did.report import ChronologicalSessionDisplay, AggregateSessionDisplay, \
         AggregateRangeDisplay, ReportTimePercent
 from did.day_range import DayRange

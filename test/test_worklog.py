@@ -8,9 +8,9 @@ import pytest
 
 from did.session import WorkSession
 from did.worklog import WorkLog, FirstJobNotArriveError, \
-    NonChronologicalOrderError, ConfigChangeDuringSessionError, InvalidLine, \
-    PaidBreakParseError, InvalidParameter, MultipleSessionsInOneDayError, \
-    TooLongSessionError
+    NonChronologicalOrderError, ConfigChangeDuringSessionError, \
+    InvalidParameter, MultipleSessionsInOneDayError, TooLongSessionError
+from did.worklog_file import InvalidLine, PaidBreakParseError
 from did.worktime import make_preset_accounting, Accounting, PaidBreakConfig
 
 default_accounting = make_preset_accounting('PL-computer')
