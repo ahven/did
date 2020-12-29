@@ -19,11 +19,10 @@ Fifth Floor, Boston, MA  02110-1301  USA
 """
 
 import datetime
-import re
 
 from did.session import WorkSession
-from did.worklog_file import parse_timedelta, Event, SetParam, DeletePaidBreak, \
-    job_reader
+from did.worklog_file import parse_timedelta, Event, SetParam, \
+    DeletePaidBreak, job_reader
 from did.worktime import make_preset_accounting, WorkSessionStats, \
     PaidBreakConfig
 
@@ -77,19 +76,15 @@ class WorkLog:
     It consists of WorkSession's.
     """
 
-    def __init__(self, file_name, filter_regex=None):
+    def __init__(self, file_name):
         """
         Constructor
         """
         self.sessions_ = []
         self.last_work_session_start_date = None
         self.file_name = file_name
-        self.filter_regex = filter_regex
         self.accounting = make_preset_accounting('PL-computer')
         self.max_session_length = datetime.timedelta(days=1)
-
-        if isinstance(self.filter_regex, str):
-            self.filter_regex = re.compile(self.filter_regex)
 
         self._load_from_file(file_name)
 
@@ -131,9 +126,6 @@ class WorkLog:
         if end is not None and end > date_time:
             raise NonChronologicalOrderError(end, date_time)
 
-    def has_filter(self):
-        return self.filter_regex is not None
-
     def append_log_event(self, date_time: datetime.datetime, text):
         self._check_chronology(date_time)
 
@@ -144,12 +136,10 @@ class WorkLog:
                         self.last_work_session_start_date)
             self.last_work_session_start_date = date_time.date()
             self.sessions_.append(
-                WorkSession(date_time, self.accounting.clone(), True,
-                            self.filter_regex))
+                WorkSession(date_time, self.accounting.clone(), True))
         elif text == "arrive ooo":
             self.sessions_.append(
-                WorkSession(date_time, self.accounting.clone(), False,
-                            self.filter_regex))
+                WorkSession(date_time, self.accounting.clone(), False))
         else:
             if not self.sessions_:
                 raise FirstJobNotArriveError()

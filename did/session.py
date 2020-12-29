@@ -18,7 +18,7 @@ Foobar; if not, write to the Free Software Foundation, Inc., 51 Franklin St,
 Fifth Floor, Boston, MA  02110-1301  USA
 """
 import datetime
-from typing import List, Optional, Pattern, Tuple
+from typing import List, Optional, Tuple
 
 from did.interval import Interval
 from did.worktime import Accounting
@@ -33,7 +33,6 @@ class WorkSession(object):
                  start: datetime.datetime,
                  accounting: Accounting,
                  is_workday: bool = True,
-                 filter_regex: Optional[Pattern] = None,
                  events: Optional[List[Tuple[datetime.datetime, str]]] = None):
         """
         start - When the day starts
@@ -45,7 +44,6 @@ class WorkSession(object):
         self._accounting = accounting
         self._is_workday = is_workday
         self._intervals: List[Interval] = []
-        self._filter_regex = filter_regex
 
         if events is not None:
             for timestamp, event in events:
@@ -56,57 +54,19 @@ class WorkSession(object):
             return False
         return (self._start == other._start and
                 self._is_workday == other._is_workday and
-                self._intervals == other._intervals and
-                self._filter_regex == other._filter_regex)
+                self._intervals == other._intervals)
 
     def __repr__(self):
-        return ('WorkSession(start="{}", is_workday={}, filter_regex={}, '
-                'intervals={})'
-                .format(self._start, self._is_workday, repr(self._filter_regex),
-                        self._intervals))
+        return ('WorkSession(start="{}", is_workday={}, intervals={})'
+                .format(self._start, self._is_workday, self._intervals))
 
     def append_log_event(self, date_time, text):
-        self._intervals.append(Interval(
-                self.end, date_time, text, False, self._is_matched(text)))
+        self._intervals.append(Interval(self.end, date_time, text, False))
 
     def append_assumed_interval(self, date_time):
         if len(self._intervals) > 0:
             name = self._intervals[-1].name
-            self._intervals.append(
-                    Interval(self.end, date_time, name, True,
-                             self._is_matched(name)))
-
-    def set_filter_regex(self, regex):
-        self._filter_regex = regex
-
-    def has_filter(self):
-        return self._filter_regex is not None
-
-    def has_matched_jobs(self):
-        for interval in self._intervals:
-            if interval.is_selected:
-                return True
-        return False
-
-    def _is_matched(self, name):
-        if self._filter_regex is None:
-            return True
-        else:
-            return self._filter_regex.search(name) is not None
-
-    def matched_work_time(self, adjusted):
-        duration = datetime.timedelta(0)
-        for interval in self._intervals:
-            if interval.is_selected and not interval.is_break:
-                duration += interval.duration(adjusted)
-        return duration
-
-    def matched_break_time(self, adjusted):
-        duration = datetime.timedelta(0)
-        for interval in self._intervals:
-            if interval.is_selected and interval.is_break:
-                duration += interval.duration(adjusted)
-        return duration
+            self._intervals.append(Interval(self.end, date_time, name, True))
 
     @property
     def start(self):

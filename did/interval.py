@@ -37,7 +37,6 @@ class Interval:
                  end: datetime.datetime,
                  name: str,
                  is_assumed: bool = False,
-                 is_selected: bool = True,
                  is_break: Optional[bool] = None):
         """Make a new interval.
 
@@ -49,7 +48,6 @@ class Interval:
         self._end = end
         self.name = name
         self.is_assumed = is_assumed
-        self.is_selected = is_selected
         self._accounted_break_seconds = 0
         if is_break is not None:
             self.is_break = is_break
@@ -58,9 +56,9 @@ class Interval:
 
     def __repr__(self):
         return ('Interval(start="{}", end="{}", name={}, is_assumed={}, '
-                'is_selected={}, is_break={})'
+                'is_break={})'
                 .format(self._start, self._end, repr(self.name),
-                        self.is_assumed, self.is_selected, self.is_break))
+                        self.is_assumed, self.is_break))
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, Interval):
@@ -69,7 +67,6 @@ class Interval:
                 self._end == other._end and
                 self.name == other.name and
                 self.is_assumed == other.is_assumed and
-                self.is_selected == other.is_selected and
                 self.is_break == other.is_break and
                 self._accounted_break_seconds == other._accounted_break_seconds)
 

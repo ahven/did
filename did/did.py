@@ -32,7 +32,7 @@ from did.editor import open_editor
 from did.worklog import WorkLog
 from did.worklog_file import JobListWriter
 from did.report import ChronologicalSessionDisplay, AggregateSessionDisplay, \
-        AggregateRangeDisplay, ReportTimePercent
+    AggregateRangeDisplay, ReportTimePercent, IntervalFilter
 from did.day_range import DayRange
 
 
@@ -55,8 +55,7 @@ class DidApplication:
         if not os.path.exists(self.args.logfile):
             self.create_file(self.args.logfile)
 
-        self.worklog = WorkLog(file_name=self.args.logfile,
-                               filter_regex=self.args.grep_pattern)
+        self.worklog = WorkLog(file_name=self.args.logfile)
 
         if 0 < len(self.args.current_task):
             self.append_event(" ".join(self.args.current_task))
@@ -73,8 +72,10 @@ class DidApplication:
         else:
             cls = ChronologicalSessionDisplay
 
-        session_display = cls(self.worklog, DayRange(self.args.range),
-                              self.args.split_breaks)
+        session_display = cls(self.worklog,
+                              DayRange(self.args.range),
+                              adjusted=self.args.split_breaks,
+                              filter=IntervalFilter(self.args.grep_pattern))
 
         if self.args.percentage and (self.args.aggregate_range or
                                      self.args.aggregate_day):
