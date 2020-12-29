@@ -131,11 +131,6 @@ class WorkLog:
         if end is not None and end > date_time:
             raise NonChronologicalOrderError(end, date_time)
 
-    def set_filter_regex(self, regex):
-        self.filter_regex = regex
-        for session in self.sessions_:
-            session.set_filter_regex(regex)
-
     def has_filter(self):
         return self.filter_regex is not None
 
