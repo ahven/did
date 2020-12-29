@@ -26,10 +26,10 @@ import datetime
 import errno
 import os
 import re
-import subprocess
 import sys
 
 from did.argument_parser import ArgumentParser
+from did.editor import open_editor
 from did.worklog import WorkLog, JobListWriter
 from did.report import ChronologicalSessionDisplay, AggregateSessionDisplay, \
         AggregateRangeDisplay, ReportTimePercent
@@ -66,7 +66,8 @@ class DidApplication:
         self.parse_options()
 
         if self.args.run_editor:
-            self.open_editor()
+            open_editor(self.args.logfile)
+            sys.exit()
 
         if not os.path.exists(self.args.logfile):
             self.create_file(self.args.logfile)
@@ -173,19 +174,6 @@ class DidApplication:
                             nargs=argparse.REMAINDER,
                             help='What have you just been doing?')
         self.args = parser.parse_args(self.cmdline_args)
-
-    def open_editor(self):
-        editors = []
-        if 'VISUAL' in os.environ:
-            editors.append(os.environ['VISUAL'])
-        if 'EDITOR' in os.environ:
-            editors.append(os.environ['EDITOR'])
-        editors.extend(["/usr/bin/vim", "/usr/bin/nano", "/usr/bin/pico",
-                        "/usr/bin/vi", "/usr/bin/mcedit"])
-        for editor in editors:
-            if os.path.exists(editor):
-                subprocess.call([editor, self.args.logfile])
-                sys.exit()
 
     def get_config_dir(self):
         if 'HOME' in os.environ:
