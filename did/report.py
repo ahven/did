@@ -19,7 +19,7 @@ Fifth Floor, Boston, MA  02110-1301  USA
 """
 import datetime
 import re
-from typing import Optional
+from typing import Optional, List, Dict, Union
 
 from did.console_codes import Foreground, Attributes
 from did.day_range import DayRange
@@ -202,7 +202,7 @@ class Display:
 
 class SessionDisplay(Display):
     def __init__(self, worklog, day_range, adjusted, filter: IntervalFilter):
-        self.sessions = []
+        self.sessions: List[WorkSession] = []
         Display.__init__(self, worklog, day_range, adjusted, filter)
 
     def append_session(self, session):
@@ -297,9 +297,12 @@ class ChronologicalSessionDisplay(SessionDisplay):
                 Attributes.reset))
 
 
+AggregateTreeChildType = Union['AggregateTreeNode', datetime.timedelta]
+
+
 class AggregateTreeNode:
     def __init__(self, adjusted: bool, filter: IntervalFilter):
-        self.children = {}
+        self.children: Dict[str, AggregateTreeChildType] = {}
         self.adjusted = adjusted
         self._filter = filter
 
