@@ -1,7 +1,7 @@
 import datetime
 import re
 import shlex
-from typing import List, Optional, Union
+from typing import Generator, List, Optional, Union
 
 from pytimeparse.timeparse import timeparse
 
@@ -63,12 +63,16 @@ class LineParserRegistry:
         return wrap
 
 
+ParsedActionType = Optional[
+    Union[Event, SetParam, PaidBreakConfig, DeletePaidBreak]]
+
+
 class Parser:
     line_parsers = LineParserRegistry()
 
     @line_parsers.register(
         r"(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2})(?::(\d{2}))?: (.+)$")
-    def _event_line(self, match):
+    def _event_line(self, match) -> ParsedActionType:
         parts = list(match.groups())
         text = parts.pop()
         for i in range(len(parts)):
@@ -81,18 +85,18 @@ class Parser:
         return Event(dt, text)
 
     @line_parsers.register(r"#|\s*$")
-    def _ignore_line(self, match):
+    def _ignore_line(self, match) -> ParsedActionType:
         del match
         return None
 
     @line_parsers.register(r"config\s+([a-z_][a-z0-9_]*)\s*=\s*(.*)$")
-    def _set_config_param(self, match):
+    def _set_config_param(self, match) -> ParsedActionType:
         name = match.group(1)
         value = match.group(2).strip()
         return SetParam(name, value)
 
     @line_parsers.register(r"config\s+paid_break\s+(.*)")
-    def _paid_break_config(self, match):
+    def _paid_break_config(self, match) -> ParsedActionType:
         args = shlex.split(match.group(1))
         if len(args) == 0:
             raise PaidBreakParseError("No arguments")
@@ -147,7 +151,7 @@ class Parser:
                                       "\"one_chunk\"")
         return paid_break
 
-    def process_line(self, line):
+    def process_line(self, line) -> ParsedActionType:
         for line_parser in self.line_parsers.line_parsers:
             match = line_parser.match(line)
             if match:
@@ -155,7 +159,7 @@ class Parser:
         raise InvalidLine("Invalid line: {}".format(line))
 
 
-def job_reader(path):
+def job_reader(path) -> Generator[ParsedActionType, None, None]:
     """
     Generator reading lines from a work log file.
 
