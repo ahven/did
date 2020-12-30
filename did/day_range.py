@@ -19,7 +19,7 @@ Fifth Floor, Boston, MA  02110-1301  USA
 import datetime
 from typing import Tuple
 
-from did.regex_dispatcher import RegexDispatcher, UnhandledDispatchError
+from did.dispatchers import RegexDispatcher, UnhandledDispatchError
 
 today = datetime.date.today()
 

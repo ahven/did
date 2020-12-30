@@ -20,7 +20,8 @@ Fifth Floor, Boston, MA  02110-1301  USA
 
 import datetime
 
-from did.session import WorkSession
+from did.dispatchers import TypeBasedDispatcher
+from did.session import AppendingToClosedSessionError, WorkSession
 from did.worklog_file import parse_timedelta, Event, SetParam, \
     DeletePaidBreak, job_reader
 from did.worktime import make_preset_accounting, WorkSessionStats, \
@@ -89,37 +90,8 @@ class WorkLog:
         self._load_from_file(file_name)
 
     def _load_from_file(self, file_name):
-        current_session_is_closed = False
-
-        for line_number, parsed_line in enumerate(job_reader(file_name),
-                                                  start=1):
-            try:
-                if isinstance(parsed_line, Event):
-                    num_sessions = len(self.sessions_)
-                    self.append_log_event(parsed_line.timestamp,
-                                          parsed_line.text)
-                    if (current_session_is_closed and
-                            num_sessions == len(self.sessions_)):
-                        # Something was appended to the current session,
-                        # even though it has already been closed.
-                        raise ConfigChangeDuringSessionError()
-                    current_session_is_closed = False
-                elif isinstance(parsed_line, SetParam):
-                    self.set_parameter(parsed_line.name, parsed_line.value)
-                    current_session_is_closed = True
-                elif isinstance(parsed_line, PaidBreakConfig):
-                    self.accounting.set_break(parsed_line)
-                    current_session_is_closed = True
-                elif isinstance(parsed_line, DeletePaidBreak):
-                    self.accounting.delete_break(parsed_line.name)
-                    current_session_is_closed = True
-                else:
-                    raise AssertionError('Unhandled parsed line: {}'
-                                         .format(parsed_line))
-            except Exception as error:
-                print("Error while parsing file \"{}\", line {}:"
-                      .format(file_name, line_number))
-                raise error
+        reader = WorkLogReader(self)
+        reader.load(file_name)
 
     def _check_chronology(self, date_time: datetime.datetime):
         end = self.end()
@@ -130,6 +102,7 @@ class WorkLog:
         self._check_chronology(date_time)
 
         if text == "arrive":
+            self._close_last_session()
             if self.last_work_session_start_date is not None:
                 if date_time.date() == self.last_work_session_start_date:
                     raise MultipleSessionsInOneDayError(
@@ -138,6 +111,7 @@ class WorkLog:
             self.sessions_.append(
                 WorkSession(date_time, self.accounting.clone(), True))
         elif text == "arrive ooo":
+            self._close_last_session()
             self.sessions_.append(
                 WorkSession(date_time, self.accounting.clone(), False))
         else:
@@ -150,10 +124,23 @@ class WorkLog:
             session.append_log_event(date_time, text)
 
     def set_parameter(self, name, value):
+        self._close_last_session()
         if name == 'daily_work_time':
             self.accounting.daily_work_time = parse_timedelta(value)
         else:
             raise InvalidParameter(name)
+
+    def set_break(self, break_config: PaidBreakConfig):
+        self._close_last_session()
+        self.accounting.set_break(break_config)
+
+    def delete_break(self, name: str):
+        self._close_last_session()
+        self.accounting.delete_break(name)
+
+    def _close_last_session(self):
+        if self.sessions_:
+            self.sessions_[-1].close()
 
     def append_assumed_interval(self, date_time: datetime.datetime):
         self._check_chronology(date_time)
@@ -190,3 +177,39 @@ class WorkLog:
             total_overtime += stats.overhours()
             session.set_stats(stats)
             session.set_total_overtime(total_overtime)
+
+
+class WorkLogReader:
+    _action_handler = TypeBasedDispatcher()
+
+    def __init__(self, worklog: WorkLog):
+        self._worklog = worklog
+
+    def load(self, file_name: str):
+        for line_number, parsed_line in enumerate(job_reader(file_name),
+                                                  start=1):
+            try:
+                self._action_handler.handle(self, parsed_line)
+            except Exception as error:
+                print("Error while parsing file \"{}\", line {}:"
+                      .format(file_name, line_number))
+                raise error
+
+    @_action_handler.register(Event)
+    def handle_event(self, event: Event):
+        try:
+            self._worklog.append_log_event(event.timestamp, event.text)
+        except AppendingToClosedSessionError as error:
+            raise ConfigChangeDuringSessionError() from error
+
+    @_action_handler.register(SetParam)
+    def handle_set_param(self, set_param: SetParam):
+        self._worklog.set_parameter(set_param.name, set_param.value)
+
+    @_action_handler.register(PaidBreakConfig)
+    def handle_paid_break_config(self, paid_break_config: PaidBreakConfig):
+        self._worklog.set_break(paid_break_config)
+
+    @_action_handler.register(DeletePaidBreak)
+    def handle_delete_paid_break(self, item: DeletePaidBreak):
+        self._worklog.delete_break(item.name)

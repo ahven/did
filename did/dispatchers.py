@@ -17,15 +17,15 @@ Foobar; if not, write to the Free Software Foundation, Inc., 51 Franklin St,
 Fifth Floor, Boston, MA  02110-1301  USA
 """
 import re
-from typing import Callable, Tuple, TypeVar
+from typing import Callable, List, Tuple, TypeVar
 
 
 class UnhandledDispatchError(Exception):
-    """Exception thrown when the RegexDispatcher couldn't handle given input"""
-    def __init__(self, dispatcher, text):
+    """Exception thrown when the dispatchers couldn't handle given input"""
+    def __init__(self, dispatcher, item):
         super().__init__()
         self.dispatcher = dispatcher
-        self.text = text
+        self.item = item
 
     def __str__(self):
         return "No function registered to handle given text"
@@ -87,3 +87,48 @@ class RegexDispatcher:
             if match:
                 return func(match.groups())
         raise UnhandledDispatchError(self, text)
+
+
+class TypeBasedDispatcher:
+    """Decorator-based handler dispatcher based on item type.
+    Use this in cases when you need to dispatch items to one of several methods
+    depending on the type of the items.
+    Example usage:
+      class Foo: pass
+      class Bar: pass
+
+      class Example:
+          dispatcher = TypeBasedDispatcher()
+
+          @dispatcher.register(Foo)
+          def handle_foo(foo: Foo):
+              # called if input is Foo
+              return "it's a foo"
+
+          @dispatcher.register(Bar)
+          def handle_bar(bar: Bar):
+              # called if input is Bar
+              return "it's a bar"
+
+          def example(all_items):
+              for item in all_items:
+                  try:
+                      result = self.dispatcher.handle(self, item)
+                  except UnhandledDispatchError:
+                      # input didn't match any of the registered functions
+    """
+    def __init__(self):
+        self.handlers: List[Tuple[type, Callable]] = []
+
+    def register(self, typ: type) -> Callable:
+        def one_time_decorator(handler: Callable) -> Callable:
+            assert typ not in self.handlers
+            self.handlers.append((typ, handler))
+            return handler
+        return one_time_decorator
+
+    def handle(self, obj, item):
+        for typ, handler in self.handlers:
+            if isinstance(item, typ):
+                return handler(obj, item)
+        raise UnhandledDispatchError(self, item)

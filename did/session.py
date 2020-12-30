@@ -24,6 +24,12 @@ from did.interval import Interval
 from did.worktime import Accounting
 
 
+class AppendingToClosedSessionError(Exception):
+    def __init__(self):
+        super().__init__(
+            "Attempted to append to a session that was already closed")
+
+
 class WorkSession(object):
     """
     classdocs
@@ -44,10 +50,12 @@ class WorkSession(object):
         self._accounting = accounting
         self._is_workday = is_workday
         self._intervals: List[Interval] = []
+        self._is_closed = False
 
         if events is not None:
             for timestamp, event in events:
                 self.append_log_event(timestamp, event)
+            self._is_closed = True
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, WorkSession):
@@ -61,12 +69,19 @@ class WorkSession(object):
                 .format(self._start, self._is_workday, self._intervals))
 
     def append_log_event(self, date_time, text):
+        if self._is_closed:
+            raise AppendingToClosedSessionError()
         self._intervals.append(Interval(self.end, date_time, text, False))
 
     def append_assumed_interval(self, date_time):
+        if self._is_closed:
+            raise AppendingToClosedSessionError()
         if len(self._intervals) > 0:
             name = self._intervals[-1].name
             self._intervals.append(Interval(self.end, date_time, name, True))
+
+    def close(self):
+        self._is_closed = True
 
     @property
     def start(self):
