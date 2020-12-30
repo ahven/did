@@ -4,7 +4,7 @@ test:
 	pytest
 
 flake8:
-	flake8 --max-line-length 80 --per-file-ignores='test/test_report.py:E501'
+	flake8 --exclude=venv --max-line-length 80 --per-file-ignores='test/test_report.py:E501'
 
 mypy:
 	mypy -p did --ignore-missing-imports
