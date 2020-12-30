@@ -2,7 +2,7 @@ import tempfile
 from contextlib import ExitStack as does_not_raise
 from datetime import datetime
 from pathlib import Path
-from typing import List, Tuple, Union
+from typing import List, Tuple, Union, Iterable
 
 import pytest
 
@@ -11,7 +11,7 @@ from did.worklog import FirstJobNotArriveError
 
 
 def run_did(job_log_file_path: Path,
-            args: List[str],
+            args: Iterable[str],
             fake_time_str: str = None):
     if fake_time_str is not None:
         fake_now = datetime.strptime(fake_time_str, '%Y-%m-%d %H:%M:%S')
@@ -64,7 +64,7 @@ def test_create_job_log_file_if_doesnt_exist():
       "2019-02-20 10:00:00: foo\n"
       "2019-02-20 10:20:55: .bar\n"),
      ])
-def test_resulting_log(times_with_args: List[Tuple[str, str]],
+def test_resulting_log(times_with_args: List[Tuple[str, Tuple[str, ...]]],
                        expectation: Union[str, Exception]):
     if isinstance(expectation, type):
         context_manager = pytest.raises(expectation)
